@@ -2,68 +2,43 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login — Fortized</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 :root{
-  --bg:#13161d;
-  --panel:#1b1f28;
-  --secondary:#1c2029;
   --accent:#fff93e;
-  --text:#ffffff;
-  --muted:#9aa3b2;
+  --panel:rgba(20,24,32,.92);
   --radius:14px;
-  --transition:180ms ease;
 }
 
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:Inter, sans-serif;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
 
 body{
-  background:var(--bg);
-  color:var(--text);
+  height:100vh;
+  background:url("Fortized banner.png") center center / cover no-repeat;
   display:flex;
   align-items:center;
   justify-content:center;
-  min-height:100vh;
+  color:white;
   position:relative;
-  overflow:hidden;
 }
 
-/* Background banner */
-.banner-bg{
+body::after{
+  content:"";
   position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:45vh;
-  background:url("Fortized banner.png") center/cover no-repeat;
-  filter:brightness(.4);
-  z-index:-2;
+  inset:0;
+  background:linear-gradient(to bottom, rgba(0,0,0,.6), rgba(19,22,29,.95));
 }
 
-.overlay{
-  position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:linear-gradient(to bottom, rgba(19,22,29,.3), #13161d 60%);
-  z-index:-1;
-}
-
-.auth-card{
-  width:400px;
+.card{
+  position:relative;
   background:var(--panel);
-  padding:40px;
+  padding:45px;
+  width:420px;
   border-radius:var(--radius);
-  box-shadow:0 10px 40px rgba(0,0,0,.6);
-  animation:fadeIn .4s ease;
+  backdrop-filter:blur(14px);
+  box-shadow:0 25px 60px rgba(0,0,0,.7);
 }
 
 .logo{
@@ -72,116 +47,76 @@ body{
   gap:10px;
   margin-bottom:30px;
   font-weight:700;
-  font-size:20px;
 }
 
-.logo img{
-  height:32px;
-}
-
-h2{
-  margin-bottom:25px;
-  font-size:22px;
-}
+.logo img{height:32px;}
 
 input{
   width:100%;
   padding:12px;
-  margin-bottom:16px;
+  margin-bottom:15px;
   border-radius:var(--radius);
   border:1px solid #2a2f3a;
-  background:var(--secondary);
+  background:#1c2029;
   color:white;
-  transition:var(--transition);
 }
 
 input:focus{
-  outline:none;
   border-color:var(--accent);
-  box-shadow:0 0 10px var(--accent);
+  box-shadow:0 0 8px var(--accent);
+  outline:none;
 }
 
-.options{
-  display:flex;
-  justify-content:space-between;
-  font-size:14px;
-  margin-bottom:20px;
-  color:var(--muted);
-}
-
-.options a{
-  color:var(--muted);
-  text-decoration:none;
-}
-
-.options a:hover{
-  color:var(--accent);
-}
-
-.btn-primary{
+button{
   width:100%;
+  padding:12px;
   background:var(--accent);
   border:none;
-  padding:12px;
   border-radius:var(--radius);
   font-weight:600;
   cursor:pointer;
-  transition:var(--transition);
 }
 
-.btn-primary:hover{
-  box-shadow:0 0 14px var(--accent);
-  transform:translateY(-2px);
-}
-
-.footer{
-  text-align:center;
-  margin-top:25px;
-  font-size:14px;
-  color:var(--muted);
-}
-
-.footer a{
-  color:var(--accent);
-  text-decoration:none;
-}
-
-@keyframes fadeIn{
-  from{opacity:0; transform:translateY(10px);}
-  to{opacity:1; transform:translateY(0);}
+.error{
+  font-size:13px;
+  color:#ff6b6b;
+  margin-bottom:10px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="banner-bg"></div>
-<div class="overlay"></div>
-
-<div class="auth-card">
-
+<div class="card">
   <div class="logo">
     <img src="Fortized icon.png">
     Fortized
   </div>
 
-  <h2>Enter the Fortress</h2>
-
-  <input type="text" placeholder="Email or Username">
-  <input type="password" placeholder="Password">
-
-  <div class="options">
-    <label><input type="checkbox" style="width:auto;"> Remember me</label>
-    <a href="#">Forgot password?</a>
-  </div>
-
-  <button class="btn-primary">Enter the Fortress</button>
-
-  <div class="footer">
-    Don’t have an account? <a href="signup.html">Join Fortized</a>
-  </div>
-
+  <input type="text" id="identifier" placeholder="Email or Username">
+  <input type="password" id="password" placeholder="Password">
+  <div id="error" class="error"></div>
+  <button onclick="login()">Enter the Fortress</button>
 </div>
+
+<script>
+function login(){
+  const id = document.getElementById("identifier").value;
+  const pass = document.getElementById("password").value;
+  const users = JSON.parse(localStorage.getItem("fortized_users")) || [];
+  const user = users.find(u =>
+    (u.email===id || u.username===id) && u.password===pass
+  );
+
+  if(!user){
+    document.getElementById("error").textContent="Invalid credentials.";
+    return;
+  }
+
+  localStorage.setItem("fortized_current_user", user.username);
+  window.location.href="app.html";
+}
+</script>
 
 </body>
 </html>
