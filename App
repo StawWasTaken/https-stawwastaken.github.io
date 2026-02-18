@@ -1,0 +1,505 @@
+// ============================================
+// FORTIZED — App Dashboard JavaScript
+// ============================================
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  // ============ FORTRESS (SERVER) SWITCHING ============
+  const servers = [
+    { name: '⚔ Iron Legion', desc: 'The iron-willed guild of the realm' },
+    { name: '🐉 Dragon Riders', desc: 'Masters of the sky and flame' },
+    { name: '🌑 Shadow Guild', desc: 'We move in silence' },
+    { name: '🔮 Arcane Order', desc: 'Knowledge is power' },
+    { name: '🏆 Vanguard FC', desc: 'Competitive esports org' },
+  ];
+
+  document.querySelectorAll('.fortress-icon').forEach((icon) => {
+    icon.addEventListener('click', () => {
+      document.querySelectorAll('.fortress-icon').forEach(i => {
+        i.classList.remove('active');
+        i.querySelector('.fortress-indicator')?.remove();
+      });
+      icon.classList.add('active');
+      const indicator = document.createElement('div');
+      indicator.className = 'fortress-indicator';
+      icon.appendChild(indicator);
+
+      const idx = parseInt(icon.dataset.server);
+      const server = servers[idx];
+      if (server) document.getElementById('serverName').textContent = server.name;
+    });
+  });
+
+  // ============ CHANNEL SWITCHING ============
+  const channelDescriptions = {
+    announcements: 'Official server announcements',
+    general: 'General chat for all members',
+    introductions: 'Introduce yourself to the fortress',
+    'war-room': 'Raid coordination and strategy',
+    'raid-signups': 'Sign up for upcoming raids',
+    strategy: 'Long-term planning and tactics',
+    'council-hall': '🔊 Voice channel — 4 connected',
+    'war-council': '🔊 Officers voice channel',
+  };
+
+  document.querySelectorAll('.channel-item:not(.locked)').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.channel-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+
+      const channel = item.dataset.channel;
+      const nameEl = document.getElementById('chatChannelName');
+      const descEl = document.getElementById('chatChannelDesc');
+      if (nameEl) nameEl.textContent = channel;
+      if (descEl) descEl.textContent = channelDescriptions[channel] || '';
+
+      const input = document.getElementById('messageInput');
+      if (input) input.placeholder = `Message #${channel}`;
+
+      const unread = item.querySelector('.channel-unread');
+      if (unread) unread.remove();
+    });
+  });
+
+  // ============ SERVER DROPDOWN ============
+  const serverMenuBtn = document.getElementById('serverMenuBtn');
+  const serverDropdown = document.getElementById('serverDropdown');
+
+  if (serverMenuBtn && serverDropdown) {
+    serverMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      serverDropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', () => serverDropdown.classList.remove('open'));
+    serverDropdown.addEventListener('click', e => e.stopPropagation());
+  }
+
+  // ============ MEMBERS SIDEBAR TOGGLE ============
+  const membersToggle = document.getElementById('membersToggle');
+  const membersSidebar = document.getElementById('membersSidebar');
+  if (membersToggle && membersSidebar) {
+    membersToggle.addEventListener('click', () => membersSidebar.classList.toggle('collapsed'));
+  }
+
+  // ============ MESSAGE INPUT & SEND ============
+  const messageInput = document.getElementById('messageInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const messagesArea = document.getElementById('messagesArea');
+
+  if (messageInput && sendBtn) {
+    messageInput.addEventListener('input', () => {
+      sendBtn.disabled = messageInput.value.trim().length === 0;
+    });
+
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (messageInput.value.trim()) sendMessage();
+      }
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function createMessage({ avatar, avatarBg, author, authorColor, roleBadge, roleBg, roleColor, roleBorder, text, time }) {
+    const div = document.createElement('div');
+    div.className = 'message';
+    div.style.opacity = '0';
+    div.style.transform = 'translateY(8px)';
+    div.innerHTML = `
+      <div class="msg-avatar" style="background: ${avatarBg};">${avatar}</div>
+      <div class="msg-content">
+        <div class="msg-header">
+          <span class="msg-author" style="color: ${authorColor};">${author}</span>
+          <span class="msg-role-badge" style="background: ${roleBg}; color: ${roleColor}; border: 1px solid ${roleBorder};">${roleBadge}</span>
+          <span class="msg-time">${time}</span>
+        </div>
+        <div class="msg-text">${text}</div>
+        <div class="msg-reactions">
+          <button class="add-reaction" title="Add Reaction">＋</button>
+        </div>
+      </div>
+    `;
+
+    // Animate in
+    requestAnimationFrame(() => {
+      div.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+      div.style.opacity = '1';
+      div.style.transform = 'translateY(0)';
+    });
+
+    // Reaction button
+    div.querySelector('.add-reaction').addEventListener('click', function() {
+      const emojis = ['⚔','🛡','🔥','✊','🎯','👑','💪','⭐'];
+      const rand = emojis[Math.floor(Math.random() * emojis.length)];
+      const btn = document.createElement('button');
+      btn.className = 'reaction active';
+      btn.textContent = rand + ' 1';
+      this.before(btn);
+      btn.addEventListener('click', () => btn.remove());
+    });
+
+    return div;
+  }
+
+  function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text) return;
+
+    const msg = createMessage({
+      avatar: '⭐',
+      avatarBg: 'linear-gradient(135deg, #fff93e, #c8c228)',
+      author: 'IronKnight',
+      authorColor: '#fff93e',
+      roleBadge: '🛡 Knight',
+      roleBg: 'rgba(192,192,192,0.1)',
+      roleColor: '#c0c0c0',
+      roleBorder: 'rgba(192,192,192,0.2)',
+      text: escapeHtml(text),
+      time: 'Just now',
+    });
+
+    messagesArea.appendChild(msg);
+    messageInput.value = '';
+    sendBtn.disabled = true;
+    scrollToBottom();
+
+    // Simulate reply after a delay
+    setTimeout(() => {
+      showTyping();
+      const replies = [
+        'Good point! I\'ll relay that to the squad. ⚔',
+        'South gate fallback confirmed. We ride at 9PM sharp.',
+        'All units acknowledged. Stand by.',
+        'Aye, we ride at dawn! 🏹',
+        'Roger that. The fortress will hold.',
+        'East flank ready. Artillery primed. 🎯',
+      ];
+      const replyText = replies[Math.floor(Math.random() * replies.length)];
+
+      setTimeout(() => {
+        hideTyping();
+        const replyMsg = createMessage({
+          avatar: 'R',
+          avatarBg: 'linear-gradient(135deg,#ed4245,#c23232)',
+          author: 'Ragnar',
+          authorColor: '#c0c0c0',
+          roleBadge: '🛡 Knight',
+          roleBg: 'rgba(192,192,192,0.1)',
+          roleColor: '#c0c0c0',
+          roleBorder: 'rgba(192,192,192,0.2)',
+          text: replyText,
+          time: 'Just now',
+        });
+        messagesArea.appendChild(replyMsg);
+        scrollToBottom();
+      }, 1800);
+    }, 1200);
+  }
+
+  function showTyping() {
+    const indicator = document.getElementById('typingIndicator');
+    if (indicator) {
+      indicator.style.display = 'flex';
+      scrollToBottom();
+    }
+  }
+
+  function hideTyping() {
+    const indicator = document.getElementById('typingIndicator');
+    if (indicator) indicator.style.display = 'none';
+  }
+
+  function scrollToBottom() {
+    if (messagesArea) {
+      messagesArea.scrollTo({ top: messagesArea.scrollHeight, behavior: 'smooth' });
+    }
+  }
+
+  // Scroll to bottom on load
+  scrollToBottom();
+
+  // ============ REACTION BUTTONS (existing) ============
+  document.querySelectorAll('.reaction').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('active');
+      const parts = btn.textContent.split(' ');
+      const emoji = parts[0];
+      let count = parseInt(parts[1]) || 0;
+      btn.classList.contains('active') ? count++ : count--;
+      if (count <= 0) {
+        btn.remove();
+      } else {
+        btn.textContent = `${emoji} ${count}`;
+      }
+    });
+  });
+
+  // ============ ADD REACTION BUTTONS (existing messages) ============
+  document.querySelectorAll('.add-reaction').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const emojis = ['⚔','🛡','🔥','✊','🎯','👑','💪','⭐','😂','❤️'];
+      const rand = emojis[Math.floor(Math.random() * emojis.length)];
+      const newBtn = document.createElement('button');
+      newBtn.className = 'reaction active';
+      newBtn.textContent = rand + ' 1';
+      this.before(newBtn);
+      newBtn.addEventListener('click', () => newBtn.remove());
+    });
+  });
+
+  // ============ SERVER CREATION MODAL ============
+  const addServerBtn = document.getElementById('addServerBtn');
+  const createServerModal = document.getElementById('createServerModal');
+  const closeModal = document.getElementById('closeModal');
+
+  function openModal() {
+    createServerModal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModalFn() {
+    createServerModal.classList.remove('open');
+    document.body.style.overflow = '';
+    // Reset to step 1
+    showModalStep('modalStep1');
+  }
+
+  if (addServerBtn) addServerBtn.addEventListener('click', openModal);
+  if (closeModal) closeModal.addEventListener('click', closeModalFn);
+
+  createServerModal?.addEventListener('click', (e) => {
+    if (e.target === createServerModal) closeModalFn();
+  });
+
+  function showModalStep(stepId) {
+    document.querySelectorAll('.modal-step').forEach(s => s.classList.remove('active'));
+    document.getElementById(stepId)?.classList.add('active');
+  }
+
+  // Template selection
+  document.querySelectorAll('.template-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+    });
+  });
+
+  // Modal navigation
+  document.getElementById('toModalStep2')?.addEventListener('click', () => showModalStep('modalStep2'));
+  document.getElementById('toModalStep1')?.addEventListener('click', () => showModalStep('modalStep1'));
+  document.getElementById('toModalStep3')?.addEventListener('click', () => {
+    const name = document.getElementById('serverNameInput')?.value.trim();
+    if (!name) {
+      document.getElementById('serverNameInput')?.classList.add('error');
+      document.getElementById('serverNameInput')?.focus();
+      return;
+    }
+    // Update invite link with server name
+    const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const inviteEl = document.getElementById('inviteLink');
+    if (inviteEl) inviteEl.textContent = `https://fortized.gg/invite/${slug}-${Math.random().toString(36).substr(2,6)}`;
+    showModalStep('modalStep3');
+  });
+  document.getElementById('backToModalStep2')?.addEventListener('click', () => showModalStep('modalStep2'));
+
+  // Color swatch selection
+  document.querySelectorAll('.color-swatch').forEach(swatch => {
+    swatch.addEventListener('click', () => {
+      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      swatch.classList.add('active');
+    });
+  });
+
+  // Copy invite link
+  document.getElementById('copyInviteBtn')?.addEventListener('click', function() {
+    const link = document.getElementById('inviteLink')?.textContent;
+    navigator.clipboard?.writeText(link).catch(() => {});
+    this.textContent = '✔ Copied!';
+    this.classList.add('btn-primary');
+    setTimeout(() => {
+      this.textContent = 'Copy';
+      this.classList.remove('btn-primary');
+    }, 2000);
+  });
+
+  // Finish create
+  document.getElementById('finishCreate')?.addEventListener('click', () => {
+    const name = document.getElementById('serverNameInput')?.value.trim() || 'New Fortress';
+    closeModalFn();
+
+    // Add new server icon
+    const fortressList = document.getElementById('fortressList');
+    const emojis = ['🏰','⚡','🌊','🦅','🗡','🌙','🔱'];
+    const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+    const newBtn = document.createElement('button');
+    newBtn.className = 'fortress-icon';
+    newBtn.dataset.server = Date.now();
+    newBtn.title = name;
+    newBtn.innerHTML = `<span>${emoji}</span>`;
+    fortressList.appendChild(newBtn);
+
+    newBtn.addEventListener('click', () => {
+      document.querySelectorAll('.fortress-icon').forEach(i => {
+        i.classList.remove('active');
+        i.querySelector('.fortress-indicator')?.remove();
+      });
+      newBtn.classList.add('active');
+      const ind = document.createElement('div');
+      ind.className = 'fortress-indicator';
+      newBtn.appendChild(ind);
+      document.getElementById('serverName').textContent = `${emoji} ${name}`;
+    });
+
+    // Flash animate
+    newBtn.style.transform = 'scale(1.3)';
+    setTimeout(() => newBtn.style.transform = '', 300);
+  });
+
+  // Banner upload click
+  document.getElementById('bannerUpload')?.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      const uploadEl = document.getElementById('bannerUpload');
+      uploadEl.style.backgroundImage = `url(${url})`;
+      uploadEl.style.backgroundSize = 'cover';
+      uploadEl.style.backgroundPosition = 'center';
+      uploadEl.querySelector('.banner-upload-inner').style.opacity = '0';
+    };
+    input.click();
+  });
+
+  // ============ PROFILE CARD ============
+  const profileCard = document.getElementById('profileCard');
+  const profileBackdrop = document.getElementById('profileBackdrop');
+
+  function openProfile() {
+    profileCard.classList.add('open');
+    profileBackdrop.classList.add('open');
+  }
+
+  function closeProfile() {
+    profileCard.classList.remove('open');
+    profileBackdrop.classList.remove('open');
+  }
+
+  document.getElementById('userBtn')?.addEventListener('click', openProfile);
+  document.getElementById('profileClose')?.addEventListener('click', closeProfile);
+  profileBackdrop?.addEventListener('click', closeProfile);
+
+  // Click on member items to show profile
+  document.querySelectorAll('.member-item:not(.offline)').forEach(item => {
+    item.addEventListener('click', () => {
+      const name = item.querySelector('.member-name')?.textContent;
+      const avatar = item.querySelector('.member-avatar');
+      if (!name) return;
+
+      // Update profile card with member data
+      const profileName = profileCard.querySelector('.profile-name');
+      const profileUsername = profileCard.querySelector('.profile-username');
+      if (profileName) profileName.textContent = name;
+      if (profileUsername) profileUsername.textContent = `@${name.toLowerCase()}`;
+
+      const pAvatar = profileCard.querySelector('.profile-avatar');
+      if (pAvatar && avatar) {
+        pAvatar.style.background = avatar.style.background;
+        pAvatar.textContent = avatar.textContent;
+      }
+
+      openProfile();
+    });
+  });
+
+  // Click on message avatars/authors
+  document.querySelectorAll('.msg-avatar, .msg-author').forEach(el => {
+    el.addEventListener('click', () => openProfile());
+  });
+
+  // ============ CATEGORY COLLAPSE ============
+  document.querySelectorAll('.category-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const channels = toggle.nextElementSibling;
+      const isCollapsed = channels.style.display === 'none';
+      channels.style.display = isCollapsed ? '' : 'none';
+      toggle.querySelector('svg').style.transform = isCollapsed ? '' : 'rotate(-90deg)';
+    });
+  });
+
+  // ============ KEYBOARD SHORTCUTS ============
+  document.addEventListener('keydown', (e) => {
+    // Escape closes modals/overlays
+    if (e.key === 'Escape') {
+      closeModalFn();
+      closeProfile();
+      serverDropdown?.classList.remove('open');
+    }
+
+    // Ctrl/Cmd + K — focus search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      messageInput?.focus();
+    }
+  });
+
+  // ============ SETTINGS BUTTON ============
+  document.getElementById('settingsBtn')?.addEventListener('click', () => {
+    // In a full app, this would open settings. For demo, show a toast.
+    showToast('Settings panel coming soon! ⚙️');
+  });
+
+  // ============ TOAST NOTIFICATION ============
+  function showToast(message) {
+    const existing = document.querySelector('.fortized-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = 'fortized-toast';
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-accent);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-family: Rajdhani, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      z-index: 9999;
+      opacity: 0;
+      transition: all 0.25s ease;
+      pointer-events: none;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => {
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(10px)';
+      setTimeout(() => toast.remove(), 300);
+    }, 2500);
+  }
+
+  // ============ AUTO-SCROLL ON LOAD ============
+  scrollToBottom();
+
+  console.log('%c🏰 FORTIZED APP', 'font-size: 20px; font-weight: bold; color: #fff93e; background: #13161d; padding: 6px 14px; border-radius: 4px;');
+  console.log('%c⚔ Fortress is operational. All systems nominal.', 'color: #43b581; font-size: 13px;');
+});
