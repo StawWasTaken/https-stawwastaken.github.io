@@ -29,7 +29,20 @@ body::after{
   position:absolute;
   inset:0;
   background:linear-gradient(to bottom, rgba(0,0,0,.6), rgba(19,22,29,.95));
+  z-index:0; /* <- ensure it is behind card */
 }
+
+.card{
+  position:relative;
+  z-index:1; /* <- ensures it is above overlay */
+  background:var(--panel);
+  padding:45px;
+  width:420px;
+  border-radius:var(--radius);
+  backdrop-filter:blur(14px);
+  box-shadow:0 25px 60px rgba(0,0,0,.7);
+}
+
 
 .card{
   position:relative;
