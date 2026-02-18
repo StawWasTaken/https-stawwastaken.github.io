@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up — Fortized</title>
+
+<style>
+:root{
+  --bg:#13161d;
+  --panel:#1b1f28;
+  --secondary:#1c2029;
+  --accent:#fff93e;
+  --text:#ffffff;
+  --muted:#9aa3b2;
+  --radius:14px;
+  --transition:180ms ease;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Inter, sans-serif;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  position:relative;
+  overflow:hidden;
+}
+
+.banner-bg{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:45vh;
+  background:url("Fortized banner.png") center/cover no-repeat;
+  filter:brightness(.4);
+  z-index:-2;
+}
+
+.overlay{
+  position:absolute;
+  width:100%;
+  height:100%;
+  background:linear-gradient(to bottom, rgba(19,22,29,.3), #13161d 60%);
+  z-index:-1;
+}
+
+.auth-card{
+  width:420px;
+  background:var(--panel);
+  padding:40px;
+  border-radius:var(--radius);
+  box-shadow:0 10px 40px rgba(0,0,0,.6);
+}
+
+.logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:25px;
+  font-weight:700;
+}
+
+.logo img{height:32px;}
+
+h2{
+  margin-bottom:20px;
+}
+
+.step{display:none;}
+.step.active{display:block;}
+
+input{
+  width:100%;
+  padding:12px;
+  margin-bottom:16px;
+  border-radius:var(--radius);
+  border:1px solid #2a2f3a;
+  background:var(--secondary);
+  color:white;
+  transition:var(--transition);
+}
+
+input:focus{
+  outline:none;
+  border-color:var(--accent);
+  box-shadow:0 0 10px var(--accent);
+}
+
+.btn-primary{
+  width:100%;
+  background:var(--accent);
+  border:none;
+  padding:12px;
+  border-radius:var(--radius);
+  font-weight:600;
+  cursor:pointer;
+  transition:var(--transition);
+}
+
+.btn-primary:hover{
+  box-shadow:0 0 14px var(--accent);
+}
+
+.progress{
+  height:6px;
+  background:#2a2f3a;
+  border-radius:10px;
+  margin-bottom:25px;
+  overflow:hidden;
+}
+
+.progress-bar{
+  height:100%;
+  width:33%;
+  background:var(--accent);
+  transition:var(--transition);
+}
+</style>
+</head>
+
+<body>
+
+<div class="banner-bg"></div>
+<div class="overlay"></div>
+
+<div class="auth-card">
+
+  <div class="logo">
+    <img src="Fortized icon.png">
+    Fortized
+  </div>
+
+  <div class="progress">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <div class="step active">
+    <h2>Create Your Account</h2>
+    <input type="email" placeholder="Email">
+    <input type="password" placeholder="Password">
+    <input type="password" placeholder="Confirm Password">
+    <button class="btn-primary" onclick="nextStep()">Continue</button>
+  </div>
+
+  <div class="step">
+    <h2>Your Identity</h2>
+    <input type="text" placeholder="Username">
+    <input type="date">
+    <button class="btn-primary" onclick="nextStep()">Continue</button>
+  </div>
+
+  <div class="step">
+    <h2>Final Setup</h2>
+    <input type="text" placeholder="Starter Avatar (optional)">
+    <button class="btn-primary">Claim Your Banner</button>
+  </div>
+
+</div>
+
+<script>
+let currentStep=0;
+const steps=document.querySelectorAll('.step');
+const bar=document.getElementById('progressBar');
+
+function nextStep(){
+  steps[currentStep].classList.remove('active');
+  currentStep++;
+  steps[currentStep].classList.add('active');
+  bar.style.width=((currentStep+1)/3*100)+'%';
+}
+</script>
+
+</body>
+</html>
