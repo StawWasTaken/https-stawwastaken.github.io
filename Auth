@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fortized — Enter the Fortress</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+</head>
+<body>
+  <div class="noise-overlay"></div>
+
+  <!-- Background -->
+  <div class="auth-bg">
+    <div class="auth-bg-grid"></div>
+    <div class="auth-bg-glow auth-bg-glow-1"></div>
+    <div class="auth-bg-glow auth-bg-glow-2"></div>
+    <!-- Castle silhouette -->
+    <div class="auth-castle-silhouette">
+      <svg viewBox="0 0 800 300" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMax meet">
+        <!-- Far towers -->
+        <rect x="0" y="120" width="80" height="180" fill="#1c2029" opacity="0.6"/>
+        <rect x="0" y="90" width="18" height="35" fill="#1c2029" opacity="0.6"/>
+        <rect x="22" y="90" width="18" height="35" fill="#1c2029" opacity="0.6"/>
+        <rect x="44" y="90" width="18" height="35" fill="#1c2029" opacity="0.6"/>
+        <rect x="62" y="90" width="18" height="35" fill="#1c2029" opacity="0.6"/>
+        <!-- Mid wall -->
+        <rect x="80" y="160" width="200" height="140" fill="#1c2029" opacity="0.5"/>
+        <!-- Main keep left -->
+        <rect x="180" y="60" width="140" height="240" fill="#232837" opacity="0.7"/>
+        <rect x="180" y="30" width="24" height="40" fill="#232837" opacity="0.7"/>
+        <rect x="210" y="30" width="24" height="40" fill="#232837" opacity="0.7"/>
+        <rect x="240" y="30" width="24" height="40" fill="#232837" opacity="0.7"/>
+        <rect x="270" y="30" width="24" height="40" fill="#232837" opacity="0.7"/>
+        <!-- Center keep -->
+        <rect x="310" y="0" width="180" height="300" fill="#1c2029" opacity="0.8"/>
+        <rect x="310" y="-20" width="30" height="30" fill="#1c2029" opacity="0.8"/>
+        <rect x="348" y="-20" width="30" height="30" fill="#1c2029" opacity="0.8"/>
+        <rect x="386" y="-20" width="30" height="30" fill="#1c2029" opacity="0.8"/>
+        <rect x="424" y="-20" width="30" height="30" fill="#1c2029" opacity="0.8"/>
+        <rect x="462" y="-20" width="28" height="30" fill="#1c2029" opacity="0.8"/>
+        <!-- Glowing windows -->
+        <rect x="350" y="80" width="40" height="55" rx="20" fill="#fff93e" opacity="0.06"/>
+        <rect x="410" y="80" width="40" height="55" rx="20" fill="#fff93e" opacity="0.04"/>
+        <rect x="350" y="160" width="40" height="50" rx="20" fill="#fff93e" opacity="0.05"/>
+        <!-- Gate arch -->
+        <path d="M370 300 L370 240 Q400 210 430 240 L430 300Z" fill="#13161d" opacity="0.8"/>
+        <!-- Right towers -->
+        <rect x="490" y="80" width="120" height="220" fill="#232837" opacity="0.65"/>
+        <rect x="490" y="50" width="20" height="38" fill="#232837" opacity="0.65"/>
+        <rect x="516" y="50" width="20" height="38" fill="#232837" opacity="0.65"/>
+        <rect x="542" y="50" width="20" height="38" fill="#232837" opacity="0.65"/>
+        <rect x="568" y="50" width="20" height="38" fill="#232837" opacity="0.65"/>
+        <rect x="590" y="50" width="20" height="38" fill="#232837" opacity="0.65"/>
+        <!-- Far right wall -->
+        <rect x="610" y="160" width="190" height="140" fill="#1c2029" opacity="0.5"/>
+        <rect x="700" y="120" width="100" height="180" fill="#1c2029" opacity="0.6"/>
+        <rect x="700" y="90" width="18" height="35" fill="#1c2029" opacity="0.6"/>
+        <rect x="724" y="90" width="18" height="35" fill="#1c2029" opacity="0.6"/>
+        <rect x="748" y="90" width="18" height="35" fill="#1c2029" opacity="0.6"/>
+        <rect x="772" y="90" width="18" height="35" fill="#1c2029" opacity="0.6"/>
+        <!-- Yellow glow under windows -->
+        <ellipse cx="370" cy="300" rx="60" ry="20" fill="#fff93e" opacity="0.04"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="auth-nav">
+    <a href="index.html" class="nav-logo">
+      <svg width="26" height="26" viewBox="0 0 28 28" fill="none"><rect x="3" y="10" width="4" height="14" fill="#fff93e"/><rect x="21" y="10" width="4" height="14" fill="#fff93e"/><rect x="3" y="4" width="4" height="5" fill="#fff93e"/><rect x="10.5" y="4" width="4" height="5" fill="#fff93e"/><rect x="21" y="4" width="4" height="5" fill="#fff93e"/><rect x="7" y="10" width="14" height="14" fill="#fff93e" opacity="0.9"/><rect x="10" y="17" width="8" height="7" fill="#13161d"/></svg>
+      <span class="logo-text">FORTIZED</span>
+    </a>
+  </nav>
+
+  <!-- Auth Container -->
+  <main class="auth-main">
+
+    <!-- ===== LOGIN PANEL ===== -->
+    <div class="auth-panel" id="loginPanel">
+      <div class="auth-card">
+        <div class="auth-card-header">
+          <h1 class="auth-title">Welcome Back</h1>
+          <p class="auth-subtitle">Enter the Fortress. Your kingdom awaits.</p>
+        </div>
+
+        <div class="auth-social">
+          <button class="social-btn" id="loginGoogle">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            Continue with Google
+          </button>
+          <button class="social-btn" id="loginDiscord">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#5865F2"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+            Continue with Discord
+          </button>
+        </div>
+
+        <div class="divider">or</div>
+
+        <form class="auth-form" id="loginForm" novalidate>
+          <div class="form-group">
+            <label class="input-label" for="loginEmail">Email or Username</label>
+            <input type="text" id="loginEmail" class="input-field" placeholder="knight@fortized.gg" autocomplete="username" />
+            <span class="field-error" id="loginEmailError"></span>
+          </div>
+
+          <div class="form-group">
+            <label class="input-label" for="loginPassword">
+              Password
+              <a href="#" class="forgot-link">Forgot Password?</a>
+            </label>
+            <div class="input-wrap">
+              <input type="password" id="loginPassword" class="input-field" placeholder="••••••••" autocomplete="current-password" />
+              <button type="button" class="input-eye" id="loginTogglePw" aria-label="Toggle password">
+                <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <span class="field-error" id="loginPasswordError"></span>
+          </div>
+
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="rememberMe" class="checkbox-input" />
+              <span class="checkbox-custom"></span>
+              <span>Remember me</span>
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary auth-submit" id="loginSubmit">
+            <span class="btn-text">Enter the Fortress</span>
+            <span class="btn-spinner" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <p class="auth-footer-text">
+          Don't have an account?
+          <a href="#" class="auth-switch-link" id="goToSignup">Join Fortized</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- ===== SIGNUP PANEL ===== -->
+    <div class="auth-panel hidden" id="signupPanel">
+      <div class="auth-card signup-card">
+        <!-- Progress indicator -->
+        <div class="signup-progress">
+          <div class="progress-step active" data-step="1">
+            <div class="step-circle">1</div>
+            <span>Account</span>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-step" data-step="2">
+            <div class="step-circle">2</div>
+            <span>Identity</span>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-step" data-step="3">
+            <div class="step-circle">3</div>
+            <span>Banner</span>
+          </div>
+        </div>
+
+        <!-- Step 1: Account -->
+        <div class="signup-step active" id="step1">
+          <div class="auth-card-header">
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Start building your fortress today.</p>
+          </div>
+
+          <div class="auth-social">
+            <button class="social-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+              Sign up with Google
+            </button>
+          </div>
+
+          <div class="divider">or continue with email</div>
+
+          <form class="auth-form" id="step1Form" novalidate>
+            <div class="form-group">
+              <label class="input-label" for="signupEmail">Email Address</label>
+              <input type="email" id="signupEmail" class="input-field" placeholder="warrior@fortized.gg" autocomplete="email" />
+              <span class="field-error" id="signupEmailError"></span>
+            </div>
+            <div class="form-group">
+              <label class="input-label" for="signupPassword">Password</label>
+              <div class="input-wrap">
+                <input type="password" id="signupPassword" class="input-field" placeholder="Min. 8 characters" autocomplete="new-password" />
+                <button type="button" class="input-eye" id="signupTogglePw1" aria-label="Toggle password">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+              <div class="password-strength" id="passwordStrength">
+                <div class="strength-bar">
+                  <div class="strength-fill" id="strengthFill"></div>
+                </div>
+                <span class="strength-label" id="strengthLabel">Enter password</span>
+              </div>
+              <span class="field-error" id="signupPasswordError"></span>
+            </div>
+            <div class="form-group">
+              <label class="input-label" for="signupConfirm">Confirm Password</label>
+              <div class="input-wrap">
+                <input type="password" id="signupConfirm" class="input-field" placeholder="Repeat your password" autocomplete="new-password" />
+                <button type="button" class="input-eye" id="signupTogglePw2" aria-label="Toggle password">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+              <span class="field-error" id="signupConfirmError"></span>
+            </div>
+            <button type="submit" class="btn btn-primary auth-submit">
+              Continue to Identity →
+            </button>
+          </form>
+        </div>
+
+        <!-- Step 2: Identity -->
+        <div class="signup-step" id="step2">
+          <div class="auth-card-header">
+            <h1 class="auth-title">Your Identity</h1>
+            <p class="auth-subtitle">Choose your warrior's name.</p>
+          </div>
+          <form class="auth-form" id="step2Form" novalidate>
+            <div class="form-group">
+              <label class="input-label" for="signupUsername">Username</label>
+              <div class="input-wrap">
+                <span class="input-prefix">@</span>
+                <input type="text" id="signupUsername" class="input-field has-prefix" placeholder="IronKnight" autocomplete="username" />
+              </div>
+              <span class="field-hint">Only letters, numbers, and underscores. Max 32 chars.</span>
+              <span class="field-error" id="usernameError"></span>
+            </div>
+            <div class="form-group">
+              <label class="input-label" for="signupDob">Date of Birth</label>
+              <input type="date" id="signupDob" class="input-field" />
+              <span class="field-hint">You must be 13 or older to join. Your date of birth is private.</span>
+              <span class="field-error" id="dobError"></span>
+            </div>
+            <div class="step-buttons">
+              <button type="button" class="btn btn-ghost" id="backToStep1">← Back</button>
+              <button type="submit" class="btn btn-primary flex-1">Continue to Banner →</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Step 3: Banner/Avatar -->
+        <div class="signup-step" id="step3">
+          <div class="auth-card-header">
+            <h1 class="auth-title">Claim Your Banner</h1>
+            <p class="auth-subtitle">Choose your avatar and theme.</p>
+          </div>
+
+          <div class="avatar-picker">
+            <div class="avatar-label">Pick your avatar</div>
+            <div class="avatar-grid" id="avatarGrid">
+              <div class="avatar-option selected" data-avatar="1" style="background: linear-gradient(135deg, #5865f2, #7289da);">⚔</div>
+              <div class="avatar-option" data-avatar="2" style="background: linear-gradient(135deg, #43b581, #2d7d5a);">🏹</div>
+              <div class="avatar-option" data-avatar="3" style="background: linear-gradient(135deg, #ed4245, #c23232);">🛡</div>
+              <div class="avatar-option" data-avatar="4" style="background: linear-gradient(135deg, #faa61a, #c07d0d);">👑</div>
+              <div class="avatar-option" data-avatar="5" style="background: linear-gradient(135deg, #eb459e, #a0316a);">🔮</div>
+              <div class="avatar-option" data-avatar="6" style="background: linear-gradient(135deg, #4fb3d9, #2a7a9a);">🌊</div>
+              <div class="avatar-option" data-avatar="7" style="background: linear-gradient(135deg, #fff93e, #c8c228);">⭐</div>
+              <div class="avatar-option" data-avatar="8" style="background: linear-gradient(135deg, #8b5cf6, #5b21b6);">🔥</div>
+            </div>
+          </div>
+
+          <div class="theme-picker">
+            <div class="avatar-label">Choose your theme</div>
+            <div class="theme-options">
+              <label class="theme-option selected" id="themeDark">
+                <input type="radio" name="theme" value="dark" checked />
+                <div class="theme-preview dark-preview">
+                  <div></div><div></div><div></div>
+                </div>
+                <span>Dark Mode</span>
+                <div class="theme-check">✔</div>
+              </label>
+              <label class="theme-option" id="themeLight">
+                <input type="radio" name="theme" value="light" />
+                <div class="theme-preview light-preview">
+                  <div></div><div></div><div></div>
+                </div>
+                <span>Light Mode</span>
+                <div class="theme-check">✔</div>
+              </label>
+            </div>
+          </div>
+
+          <div class="step-buttons">
+            <button type="button" class="btn btn-ghost" id="backToStep2">← Back</button>
+            <button type="button" class="btn btn-primary flex-1" id="claimBanner">
+              🏰 Claim Your Banner
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 4: Success -->
+        <div class="signup-step" id="step4">
+          <div class="signup-success">
+            <div class="success-icon">🏰</div>
+            <h2 class="success-title">Your Fortress Awaits!</h2>
+            <p class="success-sub">Welcome to Fortized. Your kingdom has been established.</p>
+            <div class="success-confetti" id="successConfetti"></div>
+            <a href="app.html" class="btn btn-primary btn-lg" style="margin-top: 8px;">
+              Enter Your Fortress →
+            </a>
+          </div>
+        </div>
+
+        <p class="auth-footer-text" id="signupFooter">
+          Already have an account?
+          <a href="#" class="auth-switch-link" id="goToLogin">Sign In</a>
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/auth.js"></script>
+</body>
+</html>
