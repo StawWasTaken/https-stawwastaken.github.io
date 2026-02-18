@@ -2,28 +2,21 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<title>Sign Up — Fortized</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Create Account — Fortized</title>
 
 <style>
 :root{
   --accent:#fff93e;
-  --panel:rgba(27,31,40,.95);
-  --secondary:#1c2029;
+  --panel:rgba(20,24,32,.92);
   --radius:14px;
-  --transition:180ms ease;
 }
 
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:Inter, sans-serif;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
 
 body{
-  background:url("Fortized banner.png") center/cover no-repeat fixed;
-  min-height:100vh;
+  height:100vh;
+  background:url("Fortized banner.png") center center / cover no-repeat;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -31,53 +24,37 @@ body{
   color:white;
 }
 
-body::before{
+body::after{
   content:"";
   position:absolute;
   inset:0;
-  background:linear-gradient(to bottom, rgba(0,0,0,.6), #13161d 70%);
+  background:linear-gradient(to bottom, rgba(0,0,0,.6), rgba(19,22,29,.95));
 }
 
 .card{
   position:relative;
   background:var(--panel);
-  padding:40px;
+  padding:45px;
   width:440px;
   border-radius:var(--radius);
-  backdrop-filter:blur(12px);
-  box-shadow:0 20px 50px rgba(0,0,0,.7);
-  animation:fade .4s ease;
+  backdrop-filter:blur(14px);
+  box-shadow:0 25px 60px rgba(0,0,0,.7);
 }
-
-.logo{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-bottom:20px;
-  font-weight:700;
-}
-
-.logo img{height:32px;}
 
 input{
   width:100%;
   padding:12px;
-  margin-bottom:14px;
+  margin-bottom:15px;
   border-radius:var(--radius);
   border:1px solid #2a2f3a;
-  background:var(--secondary);
+  background:#1c2029;
   color:white;
-  transition:var(--transition);
 }
 
 input:focus{
   border-color:var(--accent);
   box-shadow:0 0 8px var(--accent);
   outline:none;
-}
-
-.pfp-upload{
-  margin-bottom:15px;
 }
 
 button{
@@ -88,22 +65,6 @@ button{
   border-radius:var(--radius);
   font-weight:600;
   cursor:pointer;
-  transition:var(--transition);
-}
-
-button:hover{
-  box-shadow:0 0 14px var(--accent);
-}
-
-button:disabled{
-  opacity:.4;
-  cursor:not-allowed;
-}
-
-.small{
-  font-size:13px;
-  opacity:.7;
-  margin-bottom:10px;
 }
 
 .error{
@@ -111,73 +72,68 @@ button:disabled{
   color:#ff6b6b;
   margin-bottom:10px;
 }
-
-@keyframes fade{
-  from{opacity:0; transform:translateY(10px);}
-  to{opacity:1; transform:translateY(0);}
-}
 </style>
 </head>
 
 <body>
 
 <div class="card">
-  <div class="logo">
-    <img src="Fortized icon.png">
-    Fortized
-  </div>
+  <h2>Create Account</h2>
 
-  <h2>Create Your Account</h2>
-
-  <input type="email" id="email" placeholder="Email" required>
-  <input type="text" id="username" placeholder="Unique Username" required>
-  <div id="userError" class="error"></div>
-
-  <input type="password" id="password" placeholder="Password" required>
-
-  <div class="pfp-upload">
-    <div class="small">Upload Profile Picture</div>
-    <input type="file" accept="image/*">
-  </div>
-
-  <label class="small">
-    <input type="checkbox" id="terms">
-    I accept the Terms of Use and Terms of Service
-  </label>
-
-  <button id="createBtn" disabled>Create Your Account</button>
+  <input id="email" placeholder="Email">
+  <input id="username" placeholder="Unique Username">
+  <input type="password" id="password" placeholder="Password">
+  <input type="file" id="pfp" accept="image/*">
+  <label><input type="checkbox" id="terms"> Accept Terms of Use & Service</label>
+  <div id="error" class="error"></div>
+  <button onclick="signup()">Create Account</button>
 </div>
 
 <script>
-const takenUsernames = ["Admin","Knight","Fortized","Guilded"];
-const usernameInput = document.getElementById("username");
-const error = document.getElementById("userError");
-const terms = document.getElementById("terms");
-const btn = document.getElementById("createBtn");
+function signup(){
+  const email = email.value;
+  const username = username.value;
+  const password = document.getElementById("password").value;
+  const terms = document.getElementById("terms").checked;
 
-usernameInput.addEventListener("input",()=>{
-  if(takenUsernames.includes(usernameInput.value)){
+  if(!terms){
+    error.textContent="You must accept the terms.";
+    return;
+  }
+
+  let users = JSON.parse(localStorage.getItem("fortized_users")) || [];
+
+  if(users.find(u=>u.username===username)){
     error.textContent="Username already taken.";
-  }else{
-    error.textContent="";
+    return;
   }
-  checkValid();
-});
 
-terms.addEventListener("change",checkValid);
+  const reader = new FileReader();
+  const file = document.getElementById("pfp").files[0];
 
-function checkValid(){
-  if(!error.textContent && terms.checked &&
-     usernameInput.value.length>2){
-    btn.disabled=false;
-  }else{
-    btn.disabled=true;
-  }
+  reader.onload=function(){
+    const user={
+      email,
+      username,
+      password,
+      pfp:reader.result,
+      onyx:5,
+      radianceUntil:null,
+      bastions:[],
+      friends:[],
+      dms:[],
+      lastDaily:null
+    };
+
+    users.push(user);
+    localStorage.setItem("fortized_users",JSON.stringify(users));
+    localStorage.setItem("fortized_current_user",username);
+    window.location.href="app.html";
+  };
+
+  if(file) reader.readAsDataURL(file);
+  else reader.onload();
 }
-
-btn.onclick=()=>{
-  window.location.href="app.html";
-};
 </script>
 
 </body>
