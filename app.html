@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Fortized App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root{
+  --bg:#13161d;
+  --panel:#1c2029;
+  --accent:#fff93e;
+  --radius:12px;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
+body{background:var(--bg);color:white;display:flex;height:100vh;}
+
+.sidebar{
+  width:80px;
+  background:#0f1218;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:20px 0;
+  gap:20px;
+}
+
+.sidebar img{width:36px;cursor:pointer;}
+
+.main{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+.topbar{
+  height:60px;
+  background:var(--panel);
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  padding:0 20px;
+  gap:20px;
+}
+
+.onyx{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+}
+
+.onyx img{width:18px;}
+
+.content{
+  flex:1;
+  padding:30px;
+  overflow:auto;
+}
+
+.section{display:none;}
+.section.active{display:block;}
+
+.card{
+  background:var(--panel);
+  padding:20px;
+  border-radius:var(--radius);
+  margin-bottom:20px;
+}
+
+.atelier-card{
+  border:1px solid transparent;
+  transition:.2s;
+}
+
+.atelier-card:hover{
+  border:1px solid var(--accent);
+  box-shadow:0 0 10px var(--accent);
+}
+
+button{
+  margin-top:10px;
+  padding:8px 12px;
+  border:none;
+  border-radius:var(--radius);
+  background:var(--accent);
+  cursor:pointer;
+}
+
+.knight{
+  position:fixed;
+  bottom:10px;
+  right:10px;
+  width:120px;
+  opacity:.8;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+  <img src="Fortized icon.png" onclick="show('home')">
+  <img src="Onyx.png" onclick="show('atelier')">
+  <img src="Fortized Knight.png" onclick="show('bastions')">
+</div>
+
+<div class="main">
+
+  <div class="topbar">
+    <div class="onyx" onclick="show('atelier')">
+      <img src="Onyx.png">
+      <span id="onyxCount">25</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div id="home" class="section active">
+      <h2>Home</h2>
+      <div class="card">Friends List</div>
+      <div class="card">Direct Messages</div>
+    </div>
+
+    <div id="atelier" class="section">
+      <h2>🎨 Atelier</h2>
+      <div class="card">Balance: <span id="balance">25</span> Onyx</div>
+
+      <div class="card atelier-card">
+        1 Day – 110 Onyx
+        <button onclick="buy(110)">Activate</button>
+      </div>
+
+      <div class="card atelier-card">
+        7 Days – 770 Onyx
+        <button onclick="buy(770)">Activate</button>
+      </div>
+
+      <div class="card atelier-card">
+        30 Days – 3,300 Onyx
+        <button onclick="buy(3300)">Activate</button>
+      </div>
+    </div>
+
+    <div id="bastions" class="section">
+      <h2>🏰 Bastions</h2>
+      <div class="card">Your Bastions Appear Here</div>
+    </div>
+
+    <div id="discover" class="section">
+      <h2>Discover Public Bastions</h2>
+      <div class="card">Public Bastion Example</div>
+    </div>
+
+    <div id="blog" class="section">
+      <h2>Fortized Blog</h2>
+      <div class="card">Official Updates</div>
+    </div>
+
+  </div>
+
+</div>
+
+<img src="Fortized Knight.png" class="knight">
+
+<script>
+let onyx=25;
+
+function show(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function buy(cost){
+  if(onyx>=cost){
+    onyx-=cost;
+    document.getElementById("balance").textContent=onyx;
+    document.getElementById("onyxCount").textContent=onyx;
+    alert("Radiance Activated!");
+  }else{
+    alert("Earn more Onyx.");
+  }
+}
+</script>
+
+</body>
+</html>
