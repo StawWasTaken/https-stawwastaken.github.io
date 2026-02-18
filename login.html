@@ -4,16 +4,13 @@
 <meta charset="UTF-8">
 <title>Login — Fortized</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
 :root{
   --accent:#fff93e;
   --panel:rgba(20,24,32,.92);
   --radius:14px;
 }
-
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
-
 body{
   height:100vh;
   background:url("Fortized banner.png") center center / cover no-repeat;
@@ -23,18 +20,17 @@ body{
   color:white;
   position:relative;
 }
-
 body::after{
   content:"";
   position:absolute;
   inset:0;
   background:linear-gradient(to bottom, rgba(0,0,0,.6), rgba(19,22,29,.95));
-  z-index:0; /* <- ensure it is behind card */
+  pointer-events:none;
+  z-index:0; /* overlay stays behind */
 }
-
 .card{
   position:relative;
-  z-index:1; /* <- ensures it is above overlay */
+  z-index:1; /* card stays on top */
   background:var(--panel);
   padding:45px;
   width:420px;
@@ -42,18 +38,6 @@ body::after{
   backdrop-filter:blur(14px);
   box-shadow:0 25px 60px rgba(0,0,0,.7);
 }
-
-
-.card{
-  position:relative;
-  background:var(--panel);
-  padding:45px;
-  width:420px;
-  border-radius:var(--radius);
-  backdrop-filter:blur(14px);
-  box-shadow:0 25px 60px rgba(0,0,0,.7);
-}
-
 .logo{
   display:flex;
   align-items:center;
@@ -61,9 +45,7 @@ body::after{
   margin-bottom:30px;
   font-weight:700;
 }
-
 .logo img{height:32px;}
-
 input{
   width:100%;
   padding:12px;
@@ -73,13 +55,11 @@ input{
   background:#1c2029;
   color:white;
 }
-
 input:focus{
   border-color:var(--accent);
   box-shadow:0 0 8px var(--accent);
   outline:none;
 }
-
 button{
   width:100%;
   padding:12px;
@@ -88,8 +68,11 @@ button{
   border-radius:var(--radius);
   font-weight:600;
   cursor:pointer;
+  transition:0.15s;
 }
-
+button:hover{
+  box-shadow:0 0 12px var(--accent);
+}
 .error{
   font-size:13px;
   color:#ff6b6b;
@@ -97,21 +80,17 @@ button{
 }
 </style>
 </head>
-
 <body>
-
 <div class="card">
   <div class="logo">
     <img src="Fortized icon.png">
     Fortized
   </div>
-
   <input type="text" id="identifier" placeholder="Email or Username">
   <input type="password" id="password" placeholder="Password">
   <div id="error" class="error"></div>
   <button onclick="login()">Enter the Fortress</button>
 </div>
-
 <script>
 function login(){
   const id = document.getElementById("identifier").value;
@@ -120,16 +99,13 @@ function login(){
   const user = users.find(u =>
     (u.email===id || u.username===id) && u.password===pass
   );
-
   if(!user){
     document.getElementById("error").textContent="Invalid credentials.";
     return;
   }
-
   localStorage.setItem("fortized_current_user", user.username);
   window.location.href="app.html";
 }
 </script>
-
 </body>
 </html>
