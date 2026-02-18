@@ -3,16 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign Up — Fortized</title>
+<title>Create Account — Fortized</title>
 
 <style>
 :root{
-  --bg:#13161d;
-  --panel:#1b1f28;
-  --secondary:#1c2029;
   --accent:#fff93e;
-  --text:#ffffff;
-  --muted:#9aa3b2;
+  --panel:rgba(27,31,40,.95);
+  --secondary:#1c2029;
   --radius:14px;
   --transition:180ms ease;
 }
@@ -25,64 +22,47 @@
 }
 
 body{
-  background:var(--bg);
-  color:var(--text);
+  background:url("Fortized banner.png") center/cover no-repeat fixed;
+  min-height:100vh;
   display:flex;
   align-items:center;
   justify-content:center;
-  min-height:100vh;
   position:relative;
-  overflow:hidden;
+  color:white;
 }
 
-.banner-bg{
+body::before{
+  content:"";
   position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:45vh;
-  background:url("Fortized banner.png") center/cover no-repeat;
-  filter:brightness(.4);
-  z-index:-2;
+  inset:0;
+  background:linear-gradient(to bottom, rgba(0,0,0,.6), #13161d 70%);
 }
 
-.overlay{
-  position:absolute;
-  width:100%;
-  height:100%;
-  background:linear-gradient(to bottom, rgba(19,22,29,.3), #13161d 60%);
-  z-index:-1;
-}
-
-.auth-card{
-  width:420px;
+.card{
+  position:relative;
   background:var(--panel);
   padding:40px;
+  width:440px;
   border-radius:var(--radius);
-  box-shadow:0 10px 40px rgba(0,0,0,.6);
+  backdrop-filter:blur(12px);
+  box-shadow:0 20px 50px rgba(0,0,0,.7);
+  animation:fade .4s ease;
 }
 
 .logo{
   display:flex;
   align-items:center;
   gap:10px;
-  margin-bottom:25px;
+  margin-bottom:20px;
   font-weight:700;
 }
 
 .logo img{height:32px;}
 
-h2{
-  margin-bottom:20px;
-}
-
-.step{display:none;}
-.step.active{display:block;}
-
 input{
   width:100%;
   padding:12px;
-  margin-bottom:16px;
+  margin-bottom:14px;
   border-radius:var(--radius);
   border:1px solid #2a2f3a;
   background:var(--secondary);
@@ -91,93 +71,113 @@ input{
 }
 
 input:focus{
-  outline:none;
   border-color:var(--accent);
-  box-shadow:0 0 10px var(--accent);
+  box-shadow:0 0 8px var(--accent);
+  outline:none;
 }
 
-.btn-primary{
+.pfp-upload{
+  margin-bottom:15px;
+}
+
+button{
   width:100%;
+  padding:12px;
   background:var(--accent);
   border:none;
-  padding:12px;
   border-radius:var(--radius);
   font-weight:600;
   cursor:pointer;
   transition:var(--transition);
 }
 
-.btn-primary:hover{
+button:hover{
   box-shadow:0 0 14px var(--accent);
 }
 
-.progress{
-  height:6px;
-  background:#2a2f3a;
-  border-radius:10px;
-  margin-bottom:25px;
-  overflow:hidden;
+button:disabled{
+  opacity:.4;
+  cursor:not-allowed;
 }
 
-.progress-bar{
-  height:100%;
-  width:33%;
-  background:var(--accent);
-  transition:var(--transition);
+.small{
+  font-size:13px;
+  opacity:.7;
+  margin-bottom:10px;
+}
+
+.error{
+  font-size:13px;
+  color:#ff6b6b;
+  margin-bottom:10px;
+}
+
+@keyframes fade{
+  from{opacity:0; transform:translateY(10px);}
+  to{opacity:1; transform:translateY(0);}
 }
 </style>
 </head>
 
 <body>
 
-<div class="banner-bg"></div>
-<div class="overlay"></div>
-
-<div class="auth-card">
-
+<div class="card">
   <div class="logo">
     <img src="Fortized icon.png">
     Fortized
   </div>
 
-  <div class="progress">
-    <div class="progress-bar" id="progressBar"></div>
+  <h2>Create Your Account</h2>
+
+  <input type="email" id="email" placeholder="Email" required>
+  <input type="text" id="username" placeholder="Unique Username" required>
+  <div id="userError" class="error"></div>
+
+  <input type="password" id="password" placeholder="Password" required>
+
+  <div class="pfp-upload">
+    <div class="small">Upload Profile Picture</div>
+    <input type="file" accept="image/*">
   </div>
 
-  <div class="step active">
-    <h2>Create Your Account</h2>
-    <input type="email" placeholder="Email">
-    <input type="password" placeholder="Password">
-    <input type="password" placeholder="Confirm Password">
-    <button class="btn-primary" onclick="nextStep()">Continue</button>
-  </div>
+  <label class="small">
+    <input type="checkbox" id="terms">
+    I accept the Terms of Use and Terms of Service
+  </label>
 
-  <div class="step">
-    <h2>Your Identity</h2>
-    <input type="text" placeholder="Username">
-    <input type="date">
-    <button class="btn-primary" onclick="nextStep()">Continue</button>
-  </div>
-
-  <div class="step">
-    <h2>Final Setup</h2>
-    <input type="text" placeholder="Starter Avatar (optional)">
-    <button class="btn-primary">Claim Your Banner</button>
-  </div>
-
+  <button id="createBtn" disabled>Create Your Account</button>
 </div>
 
 <script>
-let currentStep=0;
-const steps=document.querySelectorAll('.step');
-const bar=document.getElementById('progressBar');
+const takenUsernames = ["Admin","Knight","Fortized","Guilded"];
+const usernameInput = document.getElementById("username");
+const error = document.getElementById("userError");
+const terms = document.getElementById("terms");
+const btn = document.getElementById("createBtn");
 
-function nextStep(){
-  steps[currentStep].classList.remove('active');
-  currentStep++;
-  steps[currentStep].classList.add('active');
-  bar.style.width=((currentStep+1)/3*100)+'%';
+usernameInput.addEventListener("input",()=>{
+  if(takenUsernames.includes(usernameInput.value)){
+    error.textContent="Username already taken.";
+  }else{
+    error.textContent="";
+  }
+  checkValid();
+});
+
+terms.addEventListener("change",checkValid);
+
+function checkValid(){
+  if(!error.textContent && terms.checked &&
+     usernameInput.value.length>2){
+    btn.disabled=false;
+  }else{
+    btn.disabled=true;
+  }
 }
+
+btn.onclick=()=>{
+  window.location.href="app.html";
+};
 </script>
 
 </body>
