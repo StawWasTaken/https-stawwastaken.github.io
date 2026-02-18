@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Sign Up — Fortized</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>Sign Up — Fortized</title>
 <style>
 :root{
   --accent:#fff93e;
@@ -12,11 +11,13 @@
   --radius:14px;
 }
 
+/* Basic reset */
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
 
+/* Body and fullscreen banner */
 body{
   height:100vh;
-  background:url("Fortized banner.png") center center / cover no-repeat;
+  background:url("Fortized banner.png") center center / cover no-repeat fixed;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -29,8 +30,10 @@ body::after{
   position:absolute;
   inset:0;
   background:linear-gradient(to bottom, rgba(0,0,0,.6), rgba(19,22,29,.95));
+  pointer-events:none; /* <-- IMPORTANT */
 }
 
+/* Card */
 .card{
   position:relative;
   background:var(--panel);
@@ -39,8 +42,10 @@ body::after{
   border-radius:var(--radius);
   backdrop-filter:blur(14px);
   box-shadow:0 25px 60px rgba(0,0,0,.7);
+  z-index:1;
 }
 
+/* Inputs & buttons */
 input{
   width:100%;
   padding:12px;
@@ -65,6 +70,11 @@ button{
   border-radius:var(--radius);
   font-weight:600;
   cursor:pointer;
+  transition:0.15s;
+}
+
+button:hover{
+  box-shadow:0 0 12px var(--accent);
 }
 
 .error{
@@ -72,9 +82,16 @@ button{
   color:#ff6b6b;
   margin-bottom:10px;
 }
+
+label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:14px;
+  margin-bottom:10px;
+}
 </style>
 </head>
-
 <body>
 
 <div class="card">
@@ -82,41 +99,68 @@ button{
 
   <input id="email" placeholder="Email">
   <input id="username" placeholder="Unique Username">
+  <div id="userError" class="error"></div>
+
   <input type="password" id="password" placeholder="Password">
-  <input type="file" id="pfp" accept="image/*">
-  <label><input type="checkbox" id="terms"> Accept Terms of Use & Service</label>
+
+  <div>
+    <div class="small">Upload Profile Picture</div>
+    <input type="file" id="pfp" accept="image/*">
+  </div>
+
+  <label>
+    <input type="checkbox" id="terms">
+    Accept Terms of Use & Service
+  </label>
+
   <div id="error" class="error"></div>
-  <button onclick="signup()">Create Account</button>
+  <button id="signupBtn">Create Account</button>
 </div>
 
 <script>
-function signup(){
-  const email = email.value;
-  const username = username.value;
-  const password = document.getElementById("password").value;
-  const terms = document.getElementById("terms").checked;
+const signupBtn = document.getElementById("signupBtn");
+const emailInput = document.getElementById("email");
+const usernameInput = document.getElementById("username");
+const passwordInput = document.getElementById("password");
+const termsCheckbox = document.getElementById("terms");
+const pfpInput = document.getElementById("pfp");
+const errorDiv = document.getElementById("error");
+const userErrorDiv = document.getElementById("userError");
+
+signupBtn.addEventListener("click",()=>{
+
+  const email = emailInput.value.trim();
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value;
+  const terms = termsCheckbox.checked;
+
+  if(!email || !username || !password){
+    errorDiv.textContent="All fields are required.";
+    return;
+  }
 
   if(!terms){
-    error.textContent="You must accept the terms.";
+    errorDiv.textContent="You must accept the terms.";
     return;
   }
 
   let users = JSON.parse(localStorage.getItem("fortized_users")) || [];
-
-  if(users.find(u=>u.username===username)){
-    error.textContent="Username already taken.";
+  if(users.find(u=>u.username.toLowerCase()===username.toLowerCase())){
+    userErrorDiv.textContent="Username already taken.";
     return;
+  }else{
+    userErrorDiv.textContent="";
   }
 
+  const file = pfpInput.files[0];
   const reader = new FileReader();
-  const file = document.getElementById("pfp").files[0];
 
-  reader.onload=function(){
-    const user={
+  reader.onload = function(){
+    const newUser = {
       email,
       username,
       password,
-      pfp:reader.result,
+      pfp: reader.result || null,
       onyx:5,
       radianceUntil:null,
       bastions:[],
@@ -125,16 +169,19 @@ function signup(){
       lastDaily:null
     };
 
-    users.push(user);
+    users.push(newUser);
     localStorage.setItem("fortized_users",JSON.stringify(users));
     localStorage.setItem("fortized_current_user",username);
+
     window.location.href="app.html";
   };
 
-  if(file) reader.readAsDataURL(file);
-  else reader.onload();
-}
+  if(file){
+    reader.readAsDataURL(file);
+  } else {
+    reader.onload();
+  }
+});
 </script>
-
 </body>
 </html>
