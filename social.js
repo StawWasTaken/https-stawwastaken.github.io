@@ -1,54 +1,148 @@
-// ── FORTIZED SOCIAL ENGINE ────────────────────────────────────────────────────
-// Handles cross-user friend requests, notifications, and social data via localStorage
-
+/**
+ * FortizedSocial — Self-contained social backend
+ * Uses localStorage as the database, BroadcastChannel for real-time cross-tab sync.
+ * No server required. All data is scoped per-user.
+ */
 const FortizedSocial = (() => {
 
-  // ── STORAGE KEYS ──────────────────────────────────────────────────────────
-  const USERS_KEY = 'fortized_users';
-  const CURRENT_KEY = 'fortized_current_user';
+  // ─── KEYS ────────────────────────────────────────────────────────────
+  const KEY_USERS      = 'ftz_users';
+  const KEY_STATUSES   = 'ftz_statuses';
+  const KEY_DMS        = 'ftz_dms';
+  const KEY_BAST_MSGS  = 'ftz_bmsgs';
+  const notifKey   = u => `ftz_notifs_${u}`;
+  const dmKey      = (a, b) => `ftz_dm_${[a,b].sort().join('__')}`;
 
-  // ── HELPERS ───────────────────────────────────────────────────────────────
-  function getUsers() {
-    return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-  }
-  function saveUsers(users) {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  }
-  function getCurrentUsername() {
-    return localStorage.getItem(CURRENT_KEY);
-  }
-  function getUserByName(name) {
-    return getUsers().find(u => u.username === name) || null;
-  }
-  function updateUser(updatedUser) {
-    const users = getUsers();
-    const idx = users.findIndex(u => u.username === updatedUser.username);
-    if (idx > -1) {
-      users[idx] = updatedUser;
-      saveUsers(users);
-    }
+  // ─── BROADCAST CHANNEL ────────────────────────────────────────────────
+  let bc = null;
+  try { bc = new BroadcastChannel('fortized'); } catch(e) {}
+
+  function broadcast(type, data) {
+    try { bc?.postMessage({ type, data, ts: Date.now() }); } catch(e) {}
   }
 
-  // ── NOTIFICATIONS ─────────────────────────────────────────────────────────
-  // Stored on the target user's record under user.notifications = [{id, type, from, data, read, time}]
-  function pushNotification(targetUsername, notification) {
+  // ─── STORAGE HELPERS ─────────────────────────────────────────────────
+  function get(key, fallback = null) {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch(e) { return fallback; }
+  }
+  function set(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+  }
+
+  // ─── USER CRUD ────────────────────────────────────────────────────────
+  function getUsers() { return get(KEY_USERS, []); }
+  function saveUsers(users) { set(KEY_USERS, users); }
+
+  function getUserByName(username) {
+    return getUsers().find(u => u.username === username) || null;
+  }
+
+  function saveUserObject(user) {
     const users = getUsers();
-    const idx = users.findIndex(u => u.username === targetUsername);
-    if (idx === -1) return false;
-    if (!Array.isArray(users[idx].notifications)) users[idx].notifications = [];
-    notification.id = Date.now() + Math.random().toString(36).slice(2);
-    notification.time = new Date().toISOString();
-    notification.read = false;
-    users[idx].notifications.unshift(notification);
-    // cap at 50
-    users[idx].notifications = users[idx].notifications.slice(0, 50);
+    const idx = users.findIndex(u => u.username === user.username);
+    if (idx !== -1) users[idx] = { ...users[idx], ...user };
+    else users.push(user);
     saveUsers(users);
-    return true;
   }
 
-  function getNotifications(username) {
+  // Ensure user fields are initialized
+  function initUser(username) {
+    const users = getUsers();
+    const idx = users.findIndex(u => u.username === username);
+    if (idx === -1) return;
+    const u = users[idx];
+    if (!Array.isArray(u.friends)) u.friends = [];
+    if (!Array.isArray(u.friendRequestsSent)) u.friendRequestsSent = [];
+    if (!Array.isArray(u.friendRequestsReceived)) u.friendRequestsReceived = [];
+    if (!Array.isArray(u.bastions)) u.bastions = [];
+    if (!Array.isArray(u.notifications)) u.notifications = [];
+    if (typeof u.onyx !== 'number') u.onyx = 5;
+    if (!u.status) u.status = 'online';
+    if (!u.displayName) u.displayName = u.username;
+    users[idx] = u;
+    saveUsers(users);
+    return users[idx];
+  }
+
+  // ─── AUTH ─────────────────────────────────────────────────────────────
+  function register(username, password, email = '') {
+    username = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (!username || username.length < 3) return { ok: false, msg: 'Username must be 3+ characters (a-z, 0-9, _).' };
+    if (!password || password.length < 6) return { ok: false, msg: 'Password must be 6+ characters.' };
+    const users = getUsers();
+    if (users.find(u => u.username === username)) return { ok: false, msg: 'Username already taken.' };
+    const user = {
+      username, password, email,
+      displayName: username,
+      pfp: null, banner: null,
+      onyx: 25,
+      status: 'online',
+      friends: [],
+      friendRequestsSent: [],
+      friendRequestsReceived: [],
+      bastions: [],
+      notifications: [],
+      radianceUntil: null,
+      lastDaily: null,
+      createdAt: new Date().toISOString()
+    };
+    users.push(user);
+    saveUsers(users);
+    return { ok: true, user };
+  }
+
+  function login(username, password) {
+    username = username.trim().toLowerCase();
     const user = getUserByName(username);
-    return user?.notifications || [];
+    if (!user) return { ok: false, msg: 'User not found.' };
+    if (user.password !== password) return { ok: false, msg: 'Wrong password.' };
+    localStorage.setItem('ftz_current', username);
+    setStatus(username, 'online');
+    return { ok: true, user };
+  }
+
+  function logout(username) {
+    setStatus(username, 'offline');
+    stopPolling();
+    localStorage.removeItem('ftz_current');
+  }
+
+  function getCurrentUsername() {
+    return localStorage.getItem('ftz_current') || localStorage.getItem('fortized_current_user') || null;
+  }
+
+  // ─── STATUS ───────────────────────────────────────────────────────────
+  function getStatus(username) {
+    const statuses = get(KEY_STATUSES, {});
+    return statuses[username] || 'offline';
+  }
+  function setStatus(username, status) {
+    const statuses = get(KEY_STATUSES, {});
+    statuses[username] = status;
+    set(KEY_STATUSES, statuses);
+    broadcast('status', { username, status });
+  }
+
+  // ─── NOTIFICATIONS ────────────────────────────────────────────────────
+  function getNotifications(username) {
+    // Read directly from user object (single source of truth)
+    const user = getUserByName(username);
+    return (user?.notifications || []).slice().reverse(); // newest first
+  }
+
+  function addNotification(toUsername, notif) {
+    const users = getUsers();
+    const idx = users.findIndex(u => u.username === toUsername);
+    if (idx === -1) return;
+    if (!Array.isArray(users[idx].notifications)) users[idx].notifications = [];
+    notif.id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    notif.time = new Date().toISOString();
+    notif.read = false;
+    users[idx].notifications.unshift(notif);
+    // Cap at 50
+    if (users[idx].notifications.length > 50) users[idx].notifications = users[idx].notifications.slice(0, 50);
+    saveUsers(users);
+    broadcast('notification', { to: toUsername, notif });
   }
 
   function markNotificationsRead(username) {
@@ -63,321 +157,287 @@ const FortizedSocial = (() => {
     return getNotifications(username).filter(n => !n.read).length;
   }
 
-  // ── FRIEND REQUESTS ───────────────────────────────────────────────────────
+  // ─── FRIEND SYSTEM ────────────────────────────────────────────────────
   function sendFriendRequest(fromUsername, toUsername) {
-    if (fromUsername === toUsername) return { ok: false, msg: "You can't add yourself." };
+    if (fromUsername === toUsername) return { ok: false, msg: "Can't add yourself." };
+    const users = getUsers();
+    const fi = users.findIndex(u => u.username === fromUsername);
+    const ti = users.findIndex(u => u.username === toUsername);
+    if (fi === -1) return { ok: false, msg: 'Your account not found.' };
+    if (ti === -1) return { ok: false, msg: 'User not found.' };
 
-    const toUser = getUserByName(toUsername);
-    if (!toUser) return { ok: false, msg: 'User not found.' };
+    const fu = users[fi], tu = users[ti];
+    if (!Array.isArray(fu.friends)) fu.friends = [];
+    if (!Array.isArray(tu.friends)) tu.friends = [];
+    if (!Array.isArray(fu.friendRequestsSent)) fu.friendRequestsSent = [];
+    if (!Array.isArray(tu.friendRequestsReceived)) tu.friendRequestsReceived = [];
 
-    const fromUser = getUserByName(fromUsername);
-    if (!fromUser) return { ok: false, msg: 'Session error.' };
+    if (fu.friends.includes(toUsername)) return { ok: false, msg: 'Already friends.' };
+    if (fu.friendRequestsSent.includes(toUsername)) return { ok: false, msg: 'Request already sent.' };
 
-    // already friends?
-    if (Array.isArray(fromUser.friends) && fromUser.friends.includes(toUsername)) {
-      return { ok: false, msg: 'Already friends!' };
-    }
-
-    // pending outgoing?
-    const outgoing = (fromUser.friendRequestsSent || []);
-    if (outgoing.includes(toUsername)) return { ok: false, msg: 'Request already sent.' };
-
-    // pending incoming (they already sent to you)?
-    const incoming = (fromUser.friendRequestsReceived || []);
-    if (incoming.includes(toUsername)) {
-      // auto-accept
+    // If they already sent us a request, auto-accept
+    if ((tu.friendRequestsSent || []).includes(fromUsername)) {
       return acceptFriendRequest(fromUsername, toUsername);
     }
 
-    // Write outgoing on sender
-    const users = getUsers();
-    const fromIdx = users.findIndex(u => u.username === fromUsername);
-    const toIdx = users.findIndex(u => u.username === toUsername);
-    if (!Array.isArray(users[fromIdx].friendRequestsSent)) users[fromIdx].friendRequestsSent = [];
-    users[fromIdx].friendRequestsSent.push(toUsername);
-    // Write incoming on receiver
-    if (!Array.isArray(users[toIdx].friendRequestsReceived)) users[toIdx].friendRequestsReceived = [];
-    users[toIdx].friendRequestsReceived.push(fromUsername);
+    fu.friendRequestsSent.push(toUsername);
+    if (!tu.friendRequestsReceived.includes(fromUsername)) tu.friendRequestsReceived.push(fromUsername);
+
     saveUsers(users);
 
-    // Notification to receiver
-    pushNotification(toUsername, {
-      type: 'friend_request',
-      from: fromUsername,
-      data: { from: fromUsername }
-    });
+    // Notify recipient
+    addNotification(toUsername, { type: 'friend_request', from: fromUsername });
+    broadcast('friend_request', { from: fromUsername, to: toUsername });
 
     return { ok: true, msg: `Friend request sent to ${toUsername}!` };
   }
 
-  function acceptFriendRequest(currentUsername, fromUsername) {
+  function acceptFriendRequest(myUsername, fromUsername) {
     const users = getUsers();
-    const meIdx = users.findIndex(u => u.username === currentUsername);
-    const themIdx = users.findIndex(u => u.username === fromUsername);
-    if (meIdx === -1 || themIdx === -1) return { ok: false, msg: 'User not found.' };
+    const mi = users.findIndex(u => u.username === myUsername);
+    const fi = users.findIndex(u => u.username === fromUsername);
+    if (mi === -1 || fi === -1) return { ok: false, msg: 'User not found.' };
 
-    // Add to friends lists
-    if (!Array.isArray(users[meIdx].friends)) users[meIdx].friends = [];
-    if (!Array.isArray(users[themIdx].friends)) users[themIdx].friends = [];
-    if (!users[meIdx].friends.includes(fromUsername)) users[meIdx].friends.push(fromUsername);
-    if (!users[themIdx].friends.includes(currentUsername)) users[themIdx].friends.push(currentUsername);
+    const mu = users[mi], fu = users[fi];
+
+    // Ensure arrays
+    ['friends','friendRequestsSent','friendRequestsReceived'].forEach(k => {
+      if (!Array.isArray(mu[k])) mu[k] = [];
+      if (!Array.isArray(fu[k])) fu[k] = [];
+    });
+
+    // Add to friends both ways
+    if (!mu.friends.includes(fromUsername)) mu.friends.push(fromUsername);
+    if (!fu.friends.includes(myUsername)) fu.friends.push(myUsername);
 
     // Remove pending requests
-    users[meIdx].friendRequestsReceived = (users[meIdx].friendRequestsReceived || []).filter(u => u !== fromUsername);
-    users[themIdx].friendRequestsSent = (users[themIdx].friendRequestsSent || []).filter(u => u !== currentUsername);
+    mu.friendRequestsReceived = mu.friendRequestsReceived.filter(u => u !== fromUsername);
+    mu.friendRequestsSent = mu.friendRequestsSent.filter(u => u !== fromUsername);
+    fu.friendRequestsSent = fu.friendRequestsSent.filter(u => u !== myUsername);
+    fu.friendRequestsReceived = fu.friendRequestsReceived.filter(u => u !== myUsername);
+
+    // Mark old friend_request notifications as read for myUsername
+    (mu.notifications || []).forEach(n => {
+      if (n.type === 'friend_request' && n.from === fromUsername) n.read = true;
+    });
 
     saveUsers(users);
 
-    // Notify the original sender
-    pushNotification(fromUsername, {
-      type: 'friend_accept',
-      from: currentUsername,
-      data: { from: currentUsername }
-    });
+    // Notify the sender that request was accepted
+    addNotification(fromUsername, { type: 'friend_accept', from: myUsername });
+    broadcast('friend_accept', { from: myUsername, to: fromUsername });
 
     return { ok: true, msg: `You are now friends with ${fromUsername}!` };
   }
 
-  function declineFriendRequest(currentUsername, fromUsername) {
+  function declineFriendRequest(myUsername, fromUsername) {
     const users = getUsers();
-    const meIdx = users.findIndex(u => u.username === currentUsername);
-    const themIdx = users.findIndex(u => u.username === fromUsername);
-    if (meIdx !== -1) {
-      users[meIdx].friendRequestsReceived = (users[meIdx].friendRequestsReceived || []).filter(u => u !== fromUsername);
+    const mi = users.findIndex(u => u.username === myUsername);
+    const fi = users.findIndex(u => u.username === fromUsername);
+    if (mi !== -1) {
+      if (!Array.isArray(users[mi].friendRequestsReceived)) users[mi].friendRequestsReceived = [];
+      users[mi].friendRequestsReceived = users[mi].friendRequestsReceived.filter(u => u !== fromUsername);
     }
-    if (themIdx !== -1) {
-      users[themIdx].friendRequestsSent = (users[themIdx].friendRequestsSent || []).filter(u => u !== currentUsername);
+    if (fi !== -1) {
+      if (!Array.isArray(users[fi].friendRequestsSent)) users[fi].friendRequestsSent = [];
+      users[fi].friendRequestsSent = users[fi].friendRequestsSent.filter(u => u !== myUsername);
     }
     saveUsers(users);
-    return { ok: true, msg: `Request from ${fromUsername} declined.` };
+    return { ok: true };
   }
 
-  function removeFriend(currentUsername, friendUsername) {
+  function removeFriend(myUsername, friendUsername) {
     const users = getUsers();
-    const meIdx = users.findIndex(u => u.username === currentUsername);
-    const themIdx = users.findIndex(u => u.username === friendUsername);
-    if (meIdx !== -1) users[meIdx].friends = (users[meIdx].friends || []).filter(u => u !== friendUsername);
-    if (themIdx !== -1) users[themIdx].friends = (users[themIdx].friends || []).filter(u => u !== currentUsername);
+    const mi = users.findIndex(u => u.username === myUsername);
+    const fi = users.findIndex(u => u.username === friendUsername);
+    if (mi !== -1) {
+      if (!Array.isArray(users[mi].friends)) users[mi].friends = [];
+      users[mi].friends = users[mi].friends.filter(u => u !== friendUsername);
+    }
+    if (fi !== -1) {
+      if (!Array.isArray(users[fi].friends)) users[fi].friends = [];
+      users[fi].friends = users[fi].friends.filter(u => u !== myUsername);
+    }
     saveUsers(users);
-    return { ok: true, msg: `Removed ${friendUsername} from friends.` };
+    return { ok: true };
   }
 
-  function getPendingRequests(username) {
-    const user = getUserByName(username);
-    return {
-      incoming: user?.friendRequestsReceived || [],
-      outgoing: user?.friendRequestsSent || []
-    };
-  }
-
-  // ── DM SYNC ───────────────────────────────────────────────────────────────
-  // DMs are stored in a shared key so both users see messages
-  function getDMKey(userA, userB) {
-    return 'fortized_dm_' + [userA, userB].sort().join('_');
-  }
-
-  function getDMMessages(userA, userB) {
-    const key = getDMKey(userA, userB);
-    return JSON.parse(localStorage.getItem(key)) || [];
+  // ─── DIRECT MESSAGES ─────────────────────────────────────────────────
+  function getDMMessages(user1, user2) {
+    return get(dmKey(user1, user2), []);
   }
 
   function sendDMMessage(fromUsername, toUsername, text) {
-    const key = getDMKey(fromUsername, toUsername);
-    const msgs = getDMMessages(fromUsername, toUsername);
+    const key = dmKey(fromUsername, toUsername);
+    const msgs = get(key, []);
     const now = new Date();
     const msg = {
-      id: Date.now() + Math.random().toString(36).slice(2),
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
       from: fromUsername,
       text,
       time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: now.toISOString()
     };
     msgs.push(msg);
-    localStorage.setItem(key, JSON.stringify(msgs));
+    set(key, msgs);
 
-    // Notify receiver
-    pushNotification(toUsername, {
-      type: 'dm',
-      from: fromUsername,
-      data: { preview: text.slice(0, 60) }
-    });
+    // Track DM partners in a global index
+    const dmsIndex = get(KEY_DMS, {});
+    if (!dmsIndex[fromUsername]) dmsIndex[fromUsername] = [];
+    if (!dmsIndex[toUsername]) dmsIndex[toUsername] = [];
+    if (!dmsIndex[fromUsername].includes(toUsername)) dmsIndex[fromUsername].unshift(toUsername);
+    if (!dmsIndex[toUsername].includes(fromUsername)) dmsIndex[toUsername].unshift(fromUsername);
+    // Keep only 30 recent partners
+    dmsIndex[fromUsername] = dmsIndex[fromUsername].slice(0, 30);
+    dmsIndex[toUsername] = dmsIndex[toUsername].slice(0, 30);
+    set(KEY_DMS, dmsIndex);
+
+    // Notify recipient
+    addNotification(toUsername, { type: 'dm', from: fromUsername, data: { preview: text.slice(0, 60) } });
+    broadcast('dm', { from: fromUsername, to: toUsername, msgId: msg.id });
 
     return msg;
   }
 
   function getRecentDMPartners(username) {
-    // scan all keys
-    const prefix = 'fortized_dm_';
-    const partners = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key.startsWith(prefix)) continue;
-      const parts = key.slice(prefix.length).split('_');
-      if (parts.includes(username)) {
-        const partner = parts.find(p => p !== username);
-        if (partner && !partners.includes(partner)) partners.push(partner);
-      }
-    }
-    return partners;
+    const idx = get(KEY_DMS, {});
+    return idx[username] || [];
   }
 
-  // ── BASTION SHARED DATA ───────────────────────────────────────────────────
-  // Public bastions store channel messages in shared keys
-  function getBastionKey(bastionId) {
-    return 'fortized_bastion_' + bastionId;
+  // ─── BASTION MESSAGES ─────────────────────────────────────────────────
+  function getBastionChannelMessages(bastionKey, channelId) {
+    const all = get(KEY_BAST_MSGS, {});
+    return all[`${bastionKey}_${channelId}`] || [];
   }
 
-  function getBastionChannelKey(bastionId, channelName) {
-    return `fortized_bastion_${bastionId}_ch_${channelName}`;
-  }
-
-  function getBastionChannelMessages(bastionId, channelName) {
-    const key = getBastionChannelKey(bastionId, channelName);
-    return JSON.parse(localStorage.getItem(key)) || [];
-  }
-
-  function sendBastionChannelMessage(bastionId, channelName, fromUsername, text) {
-    const key = getBastionChannelKey(bastionId, channelName);
-    const msgs = getBastionChannelMessages(bastionId, channelName);
+  function sendBastionChannelMessage(bastionKey, channelId, fromUsername, text) {
+    const all = get(KEY_BAST_MSGS, {});
+    const k = `${bastionKey}_${channelId}`;
+    if (!all[k]) all[k] = [];
     const now = new Date();
     const msg = {
-      id: Date.now() + Math.random().toString(36).slice(2),
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
       from: fromUsername,
       text,
       time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      timestamp: now.toISOString(),
-      reactions: {}
+      timestamp: now.toISOString()
     };
-    msgs.push(msg);
-    localStorage.setItem(key, JSON.stringify(msgs));
+    all[k].push(msg);
+    // Cap at 500 messages per channel
+    if (all[k].length > 500) all[k] = all[k].slice(-500);
+    set(KEY_BAST_MSGS, all);
+    broadcast('bastion_msg', { bastionKey, channelId, msg });
     return msg;
   }
 
-  function addReaction(bastionId, channelName, msgId, emoji, username) {
-    const key = getBastionChannelKey(bastionId, channelName);
-    const msgs = getBastionChannelMessages(bastionId, channelName);
+  function addReaction(bastionKey, channelId, msgId, emoji, username) {
+    const all = get(KEY_BAST_MSGS, {});
+    const k = `${bastionKey}_${channelId}`;
+    const msgs = all[k] || [];
     const msg = msgs.find(m => m.id === msgId);
     if (!msg) return;
     if (!msg.reactions) msg.reactions = {};
     if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
     const idx = msg.reactions[emoji].indexOf(username);
-    if (idx === -1) {
-      msg.reactions[emoji].push(username);
-    } else {
-      msg.reactions[emoji].splice(idx, 1);
-      if (msg.reactions[emoji].length === 0) delete msg.reactions[emoji];
+    if (idx !== -1) msg.reactions[emoji].splice(idx, 1);
+    else msg.reactions[emoji].push(username);
+    if (msg.reactions[emoji].length === 0) delete msg.reactions[emoji];
+    set(KEY_BAST_MSGS, all);
+  }
+
+  // ─── POLLING / REAL-TIME ─────────────────────────────────────────────
+  let _pollInterval = null;
+  let _lastNotifCount = 0;
+  let _pollCallbacks = {};
+
+  function startPolling(username, callbacks = {}) {
+    _pollCallbacks = callbacks;
+    stopPolling();
+
+    // Listen via BroadcastChannel (cross-tab, instant)
+    if (bc) {
+      bc.onmessage = (e) => {
+        const { type, data } = e.data;
+        if (!data) return;
+
+        if (type === 'notification' && data.to === username) {
+          _pollCallbacks.onNewNotification?.(data.notif);
+        }
+        if (type === 'dm' && data.to === username) {
+          _pollCallbacks.onNewDM?.(data);
+        }
+        if (type === 'friend_request' && data.to === username) {
+          _pollCallbacks.onFriendRequest?.(data);
+        }
+        if (type === 'friend_accept' && data.to === username) {
+          _pollCallbacks.onFriendAccept?.(data);
+        }
+        if (type === 'status') {
+          _pollCallbacks.onStatusChange?.(data);
+        }
+      };
     }
-    localStorage.setItem(key, JSON.stringify(msgs));
-    return msg;
-  }
 
-  // ── ACTIVITY / STATUS ──────────────────────────────────────────────────────
-  function setStatus(username, status, activity) {
-    const users = getUsers();
-    const idx = users.findIndex(u => u.username === username);
-    if (idx === -1) return;
-    users[idx].status = status; // 'online' | 'away' | 'dnd' | 'invisible'
-    users[idx].activity = activity || null;
-    users[idx].lastSeen = new Date().toISOString();
-    saveUsers(users);
-  }
-
-  function getStatus(username) {
-    const user = getUserByName(username);
-    if (!user) return 'offline';
-    if (!user.lastSeen) return 'offline';
-    const diff = Date.now() - new Date(user.lastSeen).getTime();
-    if (diff > 300000) return 'offline'; // 5 min
-    return user.status || 'online';
-  }
-
-  // ── SOUND ──────────────────────────────────────────────────────────────────
-  let audioCtx = null;
-  function playNotificationSound() {
-    try {
-      // Try loading the mp3 first
-      const audio = new Audio('fortized notification.mp3');
-      audio.volume = 0.15;
-      audio.play().catch(() => {
-        // Fallback: generate a soft chime with Web Audio API
-        playSyntheticChime();
-      });
-    } catch (e) {
-      playSyntheticChime();
-    }
-  }
-
-  function playSyntheticChime() {
-    try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const ctx = audioCtx;
-      const now = ctx.currentTime;
-      // Soft two-note chime
-      const notes = [880, 1108];
-      notes.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0, now + i * 0.12);
-        gain.gain.linearRampToValueAtTime(0.08, now + i * 0.12 + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.5);
-        osc.start(now + i * 0.12);
-        osc.stop(now + i * 0.12 + 0.6);
-      });
-    } catch (e) { /* silent fail */ }
-  }
-
-  // ── POLLING ───────────────────────────────────────────────────────────────
-  // Simple poll interval to check for new notifications/messages
-  let pollInterval = null;
-  let lastNotifCount = 0;
-  let onNewNotification = null;
-  let onNewDM = null;
-
-  function startPolling(username, callbacks) {
-    if (callbacks.onNewNotification) onNewNotification = callbacks.onNewNotification;
-    if (callbacks.onNewDM) onNewDM = callbacks.onNewDM;
-    if (pollInterval) clearInterval(pollInterval);
-    lastNotifCount = getUnreadCount(username);
-    pollInterval = setInterval(() => {
+    // Fallback: poll localStorage every 2 seconds
+    _pollInterval = setInterval(() => {
       const count = getUnreadCount(username);
-      if (count > lastNotifCount) {
-        const newNotifs = getNotifications(username).slice(0, count - lastNotifCount);
-        newNotifs.forEach(n => {
-          if (onNewNotification) onNewNotification(n);
-        });
-        lastNotifCount = count;
-        playNotificationSound();
+      if (count !== _lastNotifCount) {
+        const notifs = getNotifications(username);
+        const newest = notifs.find(n => !n.read);
+        if (newest) _pollCallbacks.onNewNotification?.(newest);
+        _lastNotifCount = count;
       }
     }, 2000);
+
+    _lastNotifCount = getUnreadCount(username);
   }
 
   function stopPolling() {
-    if (pollInterval) clearInterval(pollInterval);
+    clearInterval(_pollInterval);
+    _pollInterval = null;
+    if (bc) bc.onmessage = null;
   }
 
-  // ── PUBLIC API ─────────────────────────────────────────────────────────────
+  // ─── AUDIO ────────────────────────────────────────────────────────────
+  function playNotificationSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1100, ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } catch(e) {}
+  }
+
+  // ─── PUBLIC API ───────────────────────────────────────────────────────
   return {
-    getUsers, getCurrentUsername, getUserByName, updateUser,
+    // Auth
+    register, login, logout, getCurrentUsername,
+    // Users
+    getUsers, getUserByName, saveUserObject, initUser,
+    // Status
+    getStatus, setStatus,
     // Notifications
-    pushNotification, getNotifications, markNotificationsRead, getUnreadCount,
+    getNotifications, addNotification, markNotificationsRead, getUnreadCount,
     // Friends
-    sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend, getPendingRequests,
+    sendFriendRequest, acceptFriendRequest: acceptFriendRequest,
+    declineFriendRequest, removeFriend,
     // DMs
     getDMMessages, sendDMMessage, getRecentDMPartners,
     // Bastion messages
     getBastionChannelMessages, sendBastionChannelMessage, addReaction,
-    // Status
-    setStatus, getStatus,
-    // Sound
-    playNotificationSound, playSyntheticChime,
     // Polling
-    startPolling, stopPolling
+    startPolling, stopPolling,
+    // Utils
+    playNotificationSound,
+    // Accept alias for legacy code
+    acceptFriend: acceptFriendRequest,
   };
-})();
 
-// Export for module use
-if (typeof module !== 'undefined') module.exports = FortizedSocial;
+})();
