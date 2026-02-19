@@ -70,31 +70,30 @@ nav{
 
 /* Knight hero image */
 .hero-right{position:relative;z-index:1;animation:slideUp .6s cubic-bezier(.22,1,.36,1) .25s both;}
-.knight-wrap{
-  width:400px;
-  height:420px;
+.security-wrap{
+  width:380px;
+  height:380px;
   display:flex;
-  align-items:flex-end;
+  align-items:center;
   justify-content:center;
   position:relative;
 }
-.knight-wrap::before{
+.security-wrap::before{
   content:"";
   position:absolute;
-  bottom:0;left:50%;
-  transform:translateX(-50%);
-  width:300px;height:300px;
+  inset:0;
   border-radius:50%;
   background:radial-gradient(circle, rgba(255,249,62,.18), transparent 70%);
-  filter:blur(20px);
+  filter:blur(30px);
 }
-.knight-wrap img{
-  height:400px;
+.security-wrap img{
+  width:300px;
+  height:300px;
   object-fit:contain;
   position:relative;
   z-index:1;
   animation:float 5s ease-in-out infinite;
-  filter:drop-shadow(0 20px 40px rgba(255,249,62,.15));
+  filter:drop-shadow(0 0 40px rgba(255,249,62,.3)) drop-shadow(0 20px 40px rgba(255,249,62,.15));
 }
 @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-18px);}}
 
@@ -178,8 +177,8 @@ footer p{font-size:13px;color:#374151;}
     </div>
   </div>
   <div class="hero-right">
-    <div class="knight-wrap">
-      <img src="Fortized Knight.png" alt="Fortized Knight">
+    <div class="security-wrap">
+      <img src="FortizedSecurity logo.png" alt="Fortized Security">
     </div>
   </div>
 </section>
@@ -224,8 +223,8 @@ footer p{font-size:13px;color:#374151;}
       <p>Visual rank hierarchies, reaction roles, and automated permission management keep your fortress in order.</p>
     </div>
     <div class="feature-card">
-      <span class="feature-icon">🔐</span>
-      <h3>Iron Security</h3>
+      <span class="feature-icon"><img src="FortizedSecurity logo.png" alt="Security" style="height:36px;width:36px;object-fit:contain;vertical-align:middle;filter:drop-shadow(0 0 8px rgba(255,249,62,.3));"></span>
+      <h3>Iron Security <img src="FortizedSecurity logo.png" alt="" style="height:20px;vertical-align:middle;margin-left:6px;filter:drop-shadow(0 0 6px rgba(255,249,62,.3));"></h3>
       <p>Two-factor auth, anti-raid tools, and advanced moderation keep enemy forces out and your community safe.</p>
     </div>
   </div>
@@ -236,14 +235,14 @@ footer p{font-size:13px;color:#374151;}
     <img src="Fortized Knight.png" alt="Fortized Knight">
   </div>
   <div class="highlight-text">
-    <div class="section-eyebrow">Safety First</div>
+    <div class="section-eyebrow"><img src="FortizedSecurity logo.png" alt="" style="height:14px;vertical-align:middle;margin-right:6px;filter:drop-shadow(0 0 4px rgba(255,249,62,.4));">Safety First</div>
     <div class="section-title">Walls that actually hold.</div>
     <p>Fortized was built with community safety as a first-class feature; not an afterthought. Your Bastion, your rules.</p>
     <ul class="highlight-list">
-      <li>Raid protection with intelligent auto-lockdown</li>
-      <li>Granular permission controls per rank and chamber</li>
-      <li>Message scanning and automated moderation bots</li>
-      <li>Full audit logs for every action taken</li>
+      <li>Raid protection with intelligent auto-lockdown <img src="FortizedSecurity logo.png" alt="" style="height:13px;vertical-align:middle;margin-left:4px;opacity:.75;"></li>
+      <li>Granular permission controls per rank and chamber <img src="FortizedSecurity logo.png" alt="" style="height:13px;vertical-align:middle;margin-left:4px;opacity:.75;"></li>
+      <li>Message scanning and automated moderation bots <img src="FortizedSecurity logo.png" alt="" style="height:13px;vertical-align:middle;margin-left:4px;opacity:.75;"></li>
+      <li>Full audit logs for every action taken <img src="FortizedSecurity logo.png" alt="" style="height:13px;vertical-align:middle;margin-left:4px;opacity:.75;"></li>
     </ul>
     <a href="signup.html" class="btn-primary">Secure Your Fortress →</a>
   </div>
