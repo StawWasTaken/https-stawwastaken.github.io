@@ -4,205 +4,58 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login — Fortized</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root{
   --accent:#fff93e;
-  --accent-dim:rgba(255,249,62,.12);
-  --accent-glow:rgba(255,249,62,.35);
-  --panel:rgba(14,17,24,.88);
-  --border:#1e2433;
-  --input-bg:#0d1017;
-  --radius:12px;
-  --text-muted:#6b7280;
+  --accent-dim:rgba(255,249,62,.1);
+  --accent-mid:rgba(255,249,62,.2);
+  --accent-glow:rgba(255,249,62,.4);
+  --bg:#080a0f;
+  --panel:rgba(12,15,22,.9);
+  --border:#1a2030;
+  --input-bg:#07090e;
+  --radius:14px;
+  --muted:#5a6478;
+  --muted-light:#8b95a8;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{
   min-height:100vh;
   background:
-    linear-gradient(to bottom, rgba(0,0,0,.55), rgba(10,12,18,.97)),
-    url("Fortized banner.png") center center / cover no-repeat fixed;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+    linear-gradient(105deg, rgba(8,10,15,.98) 0%, rgba(8,10,15,.75) 100%),
+    url("Fortized banner.png") center / cover no-repeat fixed;
+  display:flex;align-items:center;justify-content:center;
   font-family:'DM Sans',sans-serif;
-  color:white;
-  padding:24px;
+  color:white;padding:24px;
+  position:relative;
 }
+/* Grid texture like index */
+body::before{
+  content:"";position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,249,62,.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,249,62,.012) 1px, transparent 1px);
+  background-size:60px 60px;
+  pointer-events:none;
+}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:#1e2535;border-radius:10px;}
 
-/* ── Card ─────────────────────────────────── */
+/* Card */
 .card{
+  position:relative;z-index:1;
   background:var(--panel);
-  width:100%;
-  max-width:420px;
-  border-radius:20px;
+  width:100%;max-width:420px;
+  border-radius:22px;
   border:1px solid var(--border);
-  backdrop-filter:blur(20px);
-  box-shadow:0 32px 80px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.04) inset;
+  backdrop-filter:blur(24px);
+  box-shadow:0 40px 100px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.03) inset;
   overflow:hidden;
-  animation:slideUp .45s cubic-bezier(.22,1,.36,1) both;
+  animation:revealUp .5s cubic-bezier(.22,1,.36,1) both;
 }
-@keyframes slideUp{
-  from{opacity:0;transform:translateY(28px);}
-  to{opacity:1;transform:translateY(0);}
-}
-
-/* ── Top accent bar ───────────────────────── */
-.card-bar{
-  height:3px;
-  background:linear-gradient(90deg, transparent, var(--accent), transparent);
-}
-
-.card-body{
-  padding:40px 44px 44px;
-}
-
-/* ── Logo ─────────────────────────────────── */
-.logo{
-  display:flex;
-  align-items:center;
-  gap:11px;
-  margin-bottom:32px;
-}
-.logo img{
-  height:34px;
-  width:34px;
-  object-fit:contain;
-}
-.logo-text{
-  font-family:'Syne',sans-serif;
-  font-size:20px;
-  font-weight:800;
-  letter-spacing:-.3px;
-  color:#fff;
-}
-.logo-badge{
-  font-size:10px;
-  font-weight:600;
-  letter-spacing:.1em;
-  text-transform:uppercase;
-  color:var(--accent);
-  background:rgba(255,249,62,.1);
-  border:1px solid rgba(255,249,62,.2);
-  border-radius:4px;
-  padding:2px 7px;
-  margin-left:2px;
-}
-
-/* ── Header ───────────────────────────────── */
-.card-header{
-  margin-bottom:28px;
-}
-.card-header h2{
-  font-family:'Syne',sans-serif;
-  font-size:24px;
-  font-weight:800;
-  letter-spacing:-.4px;
-  color:#fff;
-}
-.card-header p{
-  margin-top:6px;
-  font-size:13.5px;
-  color:var(--text-muted);
-  line-height:1.5;
-}
-
-/* ── Fields ───────────────────────────────── */
-.field{
-  margin-bottom:16px;
-}
-.field label{
-  display:block;
-  font-size:12px;
-  font-weight:600;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-  color:#8b92a4;
-  margin-bottom:7px;
-}
-.field input{
-  width:100%;
-  padding:12px 14px;
-  border-radius:var(--radius);
-  border:1px solid var(--border);
-  background:var(--input-bg);
-  color:white;
-  font-family:'DM Sans',sans-serif;
-  font-size:14.5px;
-  transition:border-color .18s, box-shadow .18s;
-  outline:none;
-}
-.field input:focus{
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px var(--accent-dim);
-}
-.field input::placeholder{color:#3a4052;}
-
-/* ── Error ────────────────────────────────── */
-.error{
-  font-size:12.5px;
-  color:#f87171;
-  margin-bottom:14px;
-  min-height:18px;
-  display:flex;
-  align-items:center;
-  gap:6px;
-}
-.error:not(:empty)::before{content:"⚠";font-size:12px;}
-
-/* ── Button ───────────────────────────────── */
-.btn-primary{
-  width:100%;
-  padding:14px;
-  background:var(--accent);
-  color:#0a0c10;
-  border:none;
-  border-radius:var(--radius);
-  font-family:'Syne',sans-serif;
-  font-size:15px;
-  font-weight:700;
-  letter-spacing:.02em;
-  cursor:pointer;
-  transition:box-shadow .2s, transform .1s, filter .2s;
-  margin-top:4px;
-}
-.btn-primary:hover{
-  box-shadow:0 0 28px var(--accent-glow);
-  filter:brightness(1.06);
-}
-.btn-primary:active{transform:scale(.98);}
-
-/* ── Divider ──────────────────────────────── */
-.divider{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  margin:22px 0;
-  color:#2a3044;
-  font-size:12px;
-}
-.divider::before,.divider::after{
-  content:"";
-  flex:1;
-  height:1px;
-  background:var(--border);
-}
-
-/* ── Footer ───────────────────────────────── */
-.card-footer{
-  text-align:center;
-  margin-top:22px;
-  font-size:13px;
-  color:var(--text-muted);
-}
-.card-footer a{
-  color:var(--accent);
-  text-decoration:none;
-  font-weight:600;
-}
-.card-footer a:hover{text-decoration:underline;}
-
-/* ── Shake animation for wrong creds ─────── */
+@keyframes revealUp{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
 @keyframes shake{
   0%,100%{transform:translateX(0);}
   20%{transform:translateX(-8px);}
@@ -211,6 +64,85 @@ body{
   80%{transform:translateX(5px);}
 }
 .shake{animation:shake .35s ease both;}
+
+/* Top accent bar */
+.card-bar{
+  height:2px;
+  background:linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+.card-body{padding:40px 44px 44px;}
+
+/* Logo */
+.logo{display:flex;align-items:center;gap:12px;margin-bottom:36px;text-decoration:none;}
+.logo img{height:32px;width:32px;object-fit:contain;}
+.logo-text{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.logo-badge{
+  font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--accent);background:rgba(255,249,62,.08);
+  border:1px solid rgba(255,249,62,.22);border-radius:4px;padding:2px 8px;
+}
+
+/* Header */
+.card-header{margin-bottom:30px;}
+.card-header h2{
+  font-family:'Syne',sans-serif;
+  font-size:26px;font-weight:800;letter-spacing:-.5px;color:#fff;
+  margin-bottom:6px;
+}
+.card-header p{font-size:13.5px;color:var(--muted-light);line-height:1.55;}
+
+/* Fields */
+.field{margin-bottom:18px;}
+.field label{
+  display:block;font-size:11.5px;font-weight:700;
+  letter-spacing:.07em;text-transform:uppercase;
+  color:#5a6880;margin-bottom:8px;
+}
+.field input{
+  width:100%;padding:12px 15px;
+  border-radius:var(--radius);
+  border:1px solid var(--border);
+  background:var(--input-bg);
+  color:white;font-family:'DM Sans',sans-serif;font-size:14.5px;
+  transition:border-color .18s, box-shadow .18s;outline:none;
+}
+.field input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-dim);
+}
+.field input::placeholder{color:#252c3d;}
+
+/* Error */
+.error{
+  font-size:12.5px;color:#f87171;
+  margin-bottom:16px;min-height:18px;
+  display:flex;align-items:center;gap:7px;
+}
+.error:not(:empty)::before{content:"⚠";font-size:12px;}
+
+/* Button */
+.btn-primary{
+  width:100%;padding:14px;
+  background:var(--accent);color:#080a0f;
+  border:none;border-radius:var(--radius);
+  font-family:'Syne',sans-serif;font-size:15px;font-weight:700;
+  letter-spacing:.02em;cursor:pointer;
+  transition:box-shadow .2s, transform .1s, filter .15s;
+}
+.btn-primary:hover{box-shadow:0 0 30px var(--accent-glow);filter:brightness(1.05);}
+.btn-primary:active{transform:scale(.98);}
+
+/* Divider */
+.divider{
+  display:flex;align-items:center;gap:12px;
+  margin:22px 0;color:#252c3d;font-size:12px;
+}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--border);}
+
+/* Footer */
+.card-footer{text-align:center;margin-top:4px;font-size:13px;color:var(--muted);}
+.card-footer a{color:var(--accent);text-decoration:none;font-weight:600;}
+.card-footer a:hover{text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -218,11 +150,11 @@ body{
   <div class="card-bar"></div>
   <div class="card-body">
 
-    <div class="logo">
+    <a href="index.html" class="logo">
       <img src="Fortized icon.png" alt="Fortized">
       <span class="logo-text">Fortized</span>
       <span class="logo-badge">Beta</span>
-    </div>
+    </a>
 
     <div class="card-header">
       <h2>Welcome back</h2>
@@ -235,18 +167,13 @@ body{
     </div>
 
     <div class="field">
-      <label>Password <img src="FortizedSecurity logo.png" alt="" style="height:13px;vertical-align:middle;margin-left:4px;opacity:.7;filter:drop-shadow(0 0 4px rgba(255,249,62,.2));"></label>
+      <label>Password <img src="FortizedSecurity logo.png" alt="" style="height:13px;vertical-align:middle;margin-left:4px;opacity:.7;"></label>
       <input type="password" id="password" placeholder="••••••••••">
     </div>
 
     <div id="error" class="error"></div>
 
     <button class="btn-primary" id="loginBtn">Enter the Fortress →</button>
-
-    <div style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:14px;font-size:12px;color:#374151;">
-      <img src="FortizedSecurity logo.png" alt="" style="height:13px;opacity:.5;">
-      <span>Secured login · your data stays local</span>
-    </div>
 
     <div class="divider">or</div>
 
@@ -262,38 +189,26 @@ const identifierInput = document.getElementById("identifier");
 const passwordInput = document.getElementById("password");
 const errorDiv = document.getElementById("error");
 
-// Allow Enter key to submit
 [identifierInput, passwordInput].forEach(el => {
   el.addEventListener("keydown", e => { if(e.key === "Enter") login(); });
 });
-
 loginBtn.addEventListener("click", login);
 
 function login(){
   const id = identifierInput.value.trim();
   const pass = passwordInput.value;
   errorDiv.textContent = "";
-
-  if(!id || !pass){
-    errorDiv.textContent = "Please fill in all fields.";
-    return;
-  }
-
+  if(!id || !pass){ errorDiv.textContent = "Please fill in all fields."; return; }
   const users = JSON.parse(localStorage.getItem("fortized_users")) || [];
-  const user = users.find(u =>
-    (u.email === id || u.username === id) && u.password === pass
-  );
-
+  const user = users.find(u => (u.email === id || u.username === id) && u.password === pass);
   if(!user){
     errorDiv.textContent = "Invalid credentials. Please try again.";
-    // Shake the card on wrong password
     const card = document.querySelector(".card");
     card.classList.remove("shake");
-    void card.offsetWidth; // reflow to restart animation
+    void card.offsetWidth;
     card.classList.add("shake");
     return;
   }
-
   localStorage.setItem("fortized_current_user", user.username);
   loginBtn.textContent = "✓ Entering...";
   loginBtn.style.opacity = ".7";
