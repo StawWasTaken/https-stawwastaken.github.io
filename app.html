@@ -879,24 +879,50 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
 .toast.error{border-left:3px solid var(--red);color:#fca5a5;}
 .toast.info{border-left:3px solid var(--accent);color:var(--accent);}
 
-/* Context menu */
+/* ═══ FORTIZED CONTEXT MENU ═══ */
 .ctx-menu{
-  position:fixed;z-index:3000;
-  background:var(--panel2);border:1px solid var(--border);
-  border-radius:9px;padding:4px;min-width:160px;
-  box-shadow:0 10px 36px rgba(0,0,0,.6);
-  animation:ctxIn .12s cubic-bezier(.22,1,.36,1);
+  position:fixed;z-index:9999;
+  background:rgba(13,16,24,.97);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:11px;padding:5px;
+  min-width:200px;max-width:260px;
+  box-shadow:0 16px 48px rgba(0,0,0,.7),0 0 0 1px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.04);
+  backdrop-filter:blur(20px);
+  animation:ctxIn .14s cubic-bezier(.22,1,.36,1);
+  user-select:none;
 }
-@keyframes ctxIn{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:none;}}
+@keyframes ctxIn{from{opacity:0;transform:scale(.96) translateY(-4px);}to{opacity:1;transform:none;}}
+.ctx-header{
+  padding:6px 11px 4px;
+  font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(255,255,255,.25);
+}
 .ctx-item{
-  display:flex;align-items:center;gap:8px;
-  padding:7px 10px;border-radius:6px;font-size:12.5px;color:var(--text);cursor:pointer;transition:background .08s;
+  display:flex;align-items:center;gap:9px;
+  padding:7px 11px;border-radius:7px;
+  font-size:12.5px;color:rgba(220,228,240,.9);
+  cursor:pointer;transition:background .07s,color .07s;
+  line-height:1;
 }
-.ctx-item:hover{background:rgba(255,255,255,.06);}
-.ctx-item.danger{color:var(--red);}
-.ctx-item.danger:hover{background:rgba(248,113,113,.1);}
-.ctx-sep{height:1px;background:var(--border);margin:3px 0;}
-.ctx-disabled{padding:6px 10px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;}
+.ctx-item .ctx-icon{
+  width:18px;height:18px;font-size:14px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  opacity:.7;
+}
+.ctx-item .ctx-label{flex:1;}
+.ctx-item .ctx-shortcut{font-size:10.5px;color:rgba(255,255,255,.25);flex-shrink:0;}
+.ctx-item:hover{background:rgba(255,255,255,.07);color:#fff;}
+.ctx-item:hover .ctx-icon{opacity:1;}
+.ctx-item.accent:hover{background:rgba(255,249,62,.1);color:var(--accent);}
+.ctx-item.danger{color:rgba(248,113,113,.85);}
+.ctx-item.danger:hover{background:rgba(248,113,113,.12);color:var(--red);}
+.ctx-item.disabled{opacity:.35;cursor:not-allowed;pointer-events:none;}
+.ctx-sep{height:1px;background:rgba(255,255,255,.06);margin:4px 0;}
+.ctx-section-label{
+  padding:8px 11px 3px;
+  font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:rgba(255,255,255,.22);
+}
 
 /* Emoji picker */
 .emoji-picker-wrap{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:11px;}
@@ -2443,20 +2469,221 @@ function quickAddFriend(username){
 }
 
 // ════════════════════════════════════════════════════
-// CONTEXT MENU
+// FORTIZED CONTEXT MENU — global + custom
 // ════════════════════════════════════════════════════
-function showCtxMenu(x,y,items){
-  const menu=document.getElementById('ctx-menu');menu.innerHTML='';menu.className='ctx-menu';
-  items.forEach(item=>{
-    if(item.sep){const s=document.createElement('div');s.className='ctx-sep';menu.appendChild(s);return;}
-    if(item.disabled){const d=document.createElement('div');d.className='ctx-disabled';d.textContent=item.label;menu.appendChild(d);return;}
-    const el=document.createElement('div');el.className='ctx-item'+(item.danger?' danger':'');el.textContent=item.label;
-    el.onclick=(e)=>{e.stopPropagation();item.action();menu.style.display='none';};
+
+// Block browser default context menu everywhere
+document.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  buildSmartCtxMenu(e);
+});
+
+function buildSmartCtxMenu(e) {
+  const target = e.target;
+  const x = e.clientX, y = e.clientY;
+  const selection = window.getSelection()?.toString().trim();
+
+  // Detect element types
+  const isInput = target.matches('input, textarea, [contenteditable]');
+  const isLink = target.closest('a');
+  const isImg = target.tagName === 'IMG';
+  const isMsgBubble = target.closest('.msg-bubble');
+  const isMsgGroup = target.closest('.msg-group');
+  const isFriendItem = target.closest('.friend-item, .ml-entry, .fi-name, .fi-info');
+  const isChannelItem = target.closest('.ch-item');
+  const isRailBastion = target.closest('.rail-bastion');
+  const isAvatar = target.closest('.msg-av, .fa, .ua, .ml-av, .profile-av-big');
+
+  const items = [];
+
+  // ── Message bubble context
+  if (isMsgBubble) {
+    const group = target.closest('.msg-group');
+    const isOwn = group?.classList.contains('own');
+    const authorEl = group?.querySelector('.msg-author');
+    const author = authorEl?.textContent || '';
+    const bubbleText = isMsgBubble.textContent;
+
+    items.push({ label: '💬 Message', section: true });
+    items.push({ icon: '📋', label: 'Copy Message', shortcut: 'Ctrl+C', action: () => navigator.clipboard?.writeText(bubbleText).then(() => toast('Copied!','info')) });
+    if(selection) items.push({ icon: '✂️', label: `Copy "${selection.slice(0,20)}${selection.length>20?'…':''}"`, action: () => navigator.clipboard?.writeText(selection).then(()=>toast('Copied!','info')) });
+    items.push({ sep: true });
+    if (!isOwn && author) {
+      items.push({ icon: '👤', label: `View ${author}'s Profile`, action: () => viewUserProfile(author) });
+      items.push({ icon: '💬', label: `Message ${author}`, action: () => openDMChat(author) });
+      items.push({ sep: true });
+    }
+    items.push({ icon: '↩️', label: 'Reply', action: () => toast('Reply coming soon','info') });
+    items.push({ icon: '😊', label: 'Add Reaction', action: () => toast('Emoji picker coming soon','info') });
+    items.push({ icon: '📌', label: 'Pin Message', action: () => toast('Pin coming soon','info') });
+    if (isOwn) {
+      items.push({ sep: true });
+      items.push({ icon: '✏️', label: 'Edit Message', action: () => toast('Edit coming soon','info') });
+      items.push({ icon: '🗑️', label: 'Delete Message', action: () => toast('Delete coming soon','info'), danger: true });
+    }
+    showCtxMenu(x, y, items);
+    return;
+  }
+
+  // ── Avatar / user context
+  if (isAvatar) {
+    const nameEl = isAvatar.closest('.msg-group')?.querySelector('.msg-author') ||
+                   isAvatar.closest('.friend-item')?.querySelector('.fi-name') ||
+                   isAvatar.closest('.ml-entry')?.querySelector('.ml-name');
+    const username = nameEl?.textContent?.replace(' (you)','').trim();
+    if (username && username !== CU?.username) {
+      items.push({ label: username, section: true });
+      items.push({ icon: '👤', label: 'View Profile', action: () => viewUserProfile(username) });
+      items.push({ icon: '💬', label: 'Send Message', action: () => openDMChat(username) });
+      if (!(CU?.friends||[]).includes(username)) {
+        items.push({ icon: '➕', label: 'Add Friend', action: () => quickAddFriend(username) });
+      } else {
+        items.push({ icon: '👥', label: 'Friend ✓', action: () => {}, disabled: true });
+      }
+      showCtxMenu(x, y, items);
+      return;
+    }
+  }
+
+  // ── Friend item context
+  if (isFriendItem) {
+    const nameEl = isFriendItem.querySelector?.('.fi-name') || isFriendItem.querySelector?.('.ml-name') || isFriendItem;
+    const username = nameEl?.textContent?.replace(' (you)','').trim();
+    if (username && username !== CU?.username) {
+      items.push({ label: username, section: true });
+      items.push({ icon: '💬', label: 'Send Message', action: () => openDMChat(username) });
+      items.push({ icon: '👤', label: 'View Profile', action: () => viewUserProfile(username) });
+      items.push({ sep: true });
+      items.push({ icon: '🗑️', label: 'Remove Friend', action: () => removeFriend(username), danger: true });
+      showCtxMenu(x, y, items);
+      return;
+    }
+  }
+
+  // ── Channel item context
+  if (isChannelItem) {
+    const nameEl = isChannelItem.querySelector('span:last-child');
+    const chName = nameEl?.textContent || 'channel';
+    const chIdx = [...isChannelItem.parentElement.querySelectorAll('.ch-item')].indexOf(isChannelItem);
+    items.push({ label: `# ${chName}`, section: true });
+    items.push({ icon: '📋', label: 'Copy Channel Name', action: () => navigator.clipboard?.writeText(chName).then(()=>toast('Copied!','info')) });
+    items.push({ icon: '📌', label: 'Mark as Read', action: () => toast('Marked as read','info') });
+    items.push({ sep: true });
+    items.push({ icon: '⚙️', label: 'Edit Channel', action: () => toast('Edit coming soon','info') });
+    if (curBastion !== null) {
+      items.push({ icon: '🗑️', label: 'Delete Channel', action: () => deleteChannel(curBastion, chIdx), danger: true });
+    }
+    showCtxMenu(x, y, items);
+    return;
+  }
+
+  // ── Rail bastion context
+  if (isRailBastion) {
+    const idx = [...document.querySelectorAll('.rail-bastion')].indexOf(isRailBastion);
+    const b = CU?.bastions?.[idx];
+    if (b) {
+      items.push({ label: b.name, section: true });
+      items.push({ icon: '🏰', label: 'Open Bastion', action: () => openBastion(idx) });
+      items.push({ icon: '⚙️', label: 'Bastion Settings', action: () => toast('Settings coming soon','info') });
+      items.push({ sep: true });
+      items.push({ icon: '🗑️', label: 'Leave Bastion', action: () => toast('Leave coming soon','info'), danger: true });
+      showCtxMenu(x, y, items);
+      return;
+    }
+  }
+
+  // ── Input field context (text editing)
+  if (isInput) {
+    items.push({ label: 'Text', section: true });
+    if (selection) {
+      items.push({ icon: '📋', label: 'Copy', shortcut: 'Ctrl+C', action: () => navigator.clipboard?.writeText(selection).then(()=>toast('Copied!','info')) });
+      items.push({ icon: '✂️', label: 'Cut', shortcut: 'Ctrl+X', action: () => { navigator.clipboard?.writeText(selection); document.execCommand('cut'); } });
+    }
+    items.push({ icon: '📄', label: 'Paste', shortcut: 'Ctrl+V', action: () => { navigator.clipboard?.readText().then(t => document.execCommand('insertText', false, t)).catch(()=>toast('Paste not supported','info')); } });
+    items.push({ sep: true });
+    items.push({ icon: '🔡', label: 'Select All', shortcut: 'Ctrl+A', action: () => { target.select?.(); document.execCommand('selectAll'); } });
+    showCtxMenu(x, y, items);
+    return;
+  }
+
+  // ── Image context
+  if (isImg && target.src) {
+    items.push({ label: 'Image', section: true });
+    items.push({ icon: '🔗', label: 'Copy Image URL', action: () => navigator.clipboard?.writeText(target.src).then(()=>toast('URL copied!','info')) });
+    items.push({ icon: '💾', label: 'Save Image', action: () => { const a=document.createElement('a');a.href=target.src;a.download='fortized-image';a.click(); } });
+    showCtxMenu(x, y, items);
+    return;
+  }
+
+  // ── Selection context
+  if (selection) {
+    items.push({ label: 'Selection', section: true });
+    items.push({ icon: '📋', label: `Copy "${selection.slice(0,28)}${selection.length>28?'…':''}"`, shortcut: 'Ctrl+C', action: () => navigator.clipboard?.writeText(selection).then(()=>toast('Copied!','info')) });
+    items.push({ sep: true });
+  }
+
+  // ── General / fallback context
+  items.push({ label: 'Fortized', section: true });
+  items.push({ icon: '🏠', label: 'Go to Home', action: () => navigate('home') });
+  items.push({ icon: '🧭', label: 'Discover Bastions', action: () => navigate('discover') });
+  items.push({ icon: '💎', label: 'Atelier', action: () => navigate('atelier') });
+  items.push({ sep: true });
+  items.push({ icon: '🔔', label: 'Notifications', action: () => toggleNotifPanel() });
+  items.push({ icon: '⚙️', label: 'Settings', action: () => navigate('profile') });
+  items.push({ sep: true });
+  items.push({ icon: '🚪', label: 'Log Out', action: () => logout(), danger: true });
+
+  showCtxMenu(x, y, items);
+}
+
+function showCtxMenu(x, y, items) {
+  const menu = document.getElementById('ctx-menu');
+  menu.innerHTML = '';
+  menu.className = 'ctx-menu';
+  menu.style.display = 'block';
+  menu.style.left = '-9999px';
+  menu.style.top = '-9999px';
+
+  items.forEach(item => {
+    if (item.sep) {
+      const s = document.createElement('div');
+      s.className = 'ctx-sep';
+      menu.appendChild(s);
+      return;
+    }
+    if (item.section) {
+      const s = document.createElement('div');
+      s.className = 'ctx-section-label';
+      s.textContent = item.label;
+      menu.appendChild(s);
+      return;
+    }
+    const el = document.createElement('div');
+    el.className = 'ctx-item'
+      + (item.danger ? ' danger' : '')
+      + (item.accent ? ' accent' : '')
+      + (item.disabled ? ' disabled' : '');
+    el.innerHTML = `
+      <span class="ctx-icon">${item.icon || ''}</span>
+      <span class="ctx-label">${item.label}</span>
+      ${item.shortcut ? `<span class="ctx-shortcut">${item.shortcut}</span>` : ''}
+    `;
+    if (!item.disabled) {
+      el.onclick = e => { e.stopPropagation(); item.action(); menu.style.display = 'none'; };
+    }
     menu.appendChild(el);
   });
-  menu.style.display='block';
-  menu.style.left=Math.min(x,window.innerWidth-190)+'px';
-  menu.style.top=Math.min(y,window.innerHeight-menu.offsetHeight-8)+'px';
+
+  // Position smartly — keep on screen
+  const mw = menu.offsetWidth, mh = menu.offsetHeight;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let left = x + 2, top = y + 2;
+  if (left + mw > vw - 8) left = x - mw - 2;
+  if (top + mh > vh - 8) top = y - mh - 2;
+  if (left < 8) left = 8;
+  if (top < 8) top = 8;
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
 }
 
 // ════════════════════════════════════════════════════
@@ -2492,6 +2719,10 @@ function logout(){
   localStorage.removeItem('fortized_current_user');window.location.href='login.html';
 }
 document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});});
+// Close ctx-menu on left-click, scroll, or Escape
+document.addEventListener('click',()=>{ document.getElementById('ctx-menu').style.display='none'; });
+document.addEventListener('scroll',()=>{ document.getElementById('ctx-menu').style.display='none'; },true);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.getElementById('ctx-menu').style.display='none'; });
 </script>
 </body>
 </html>
