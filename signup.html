@@ -4,89 +4,362 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sign Up — Fortized</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
   --accent:#fff93e;
-  --panel:rgba(20,24,32,.92);
-  --radius:14px;
+  --accent-dim:rgba(255,249,62,.12);
+  --accent-glow:rgba(255,249,62,.35);
+  --panel:rgba(14,17,24,.88);
+  --border:#1e2433;
+  --input-bg:#0d1017;
+  --radius:12px;
+  --text-muted:#6b7280;
 }
-*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}
 body{
-  height:100vh;
+  min-height:100vh;
   background:
-    linear-gradient(to bottom, rgba(0,0,0,.6), rgba(19,22,29,.95)),
+    linear-gradient(to bottom, rgba(0,0,0,.55), rgba(10,12,18,.97)),
     url("Fortized banner.png") center center / cover no-repeat fixed;
   display:flex;
   align-items:center;
   justify-content:center;
+  font-family:'DM Sans',sans-serif;
   color:white;
+  padding:24px;
 }
+
+/* ── Card ─────────────────────────────────── */
 .card{
   background:var(--panel);
-  padding:45px;
-  width:440px;
-  border-radius:var(--radius);
-  backdrop-filter:blur(14px);
-  box-shadow:0 25px 60px rgba(0,0,0,.7);
-}
-input{
   width:100%;
-  padding:12px;
-  margin-bottom:15px;
-  border-radius:var(--radius);
-  border:1px solid #2a2f3a;
-  background:#1c2029;
-  color:white;
+  max-width:460px;
+  border-radius:20px;
+  border:1px solid var(--border);
+  backdrop-filter:blur(20px);
+  box-shadow:0 32px 80px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.04) inset;
+  overflow:hidden;
+  animation:slideUp .45s cubic-bezier(.22,1,.36,1) both;
 }
-input:focus{
-  border-color:var(--accent);
-  box-shadow:0 0 8px var(--accent);
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(28px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* ── Card top accent bar ──────────────────── */
+.card-bar{
+  height:3px;
+  background:linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+.card-body{
+  padding:40px 44px 44px;
+}
+
+/* ── Header ───────────────────────────────── */
+.card-header{
+  margin-bottom:32px;
+}
+.card-header h2{
+  font-family:'Syne',sans-serif;
+  font-size:26px;
+  font-weight:800;
+  letter-spacing:-.5px;
+  color:#fff;
+}
+.card-header p{
+  margin-top:6px;
+  font-size:13.5px;
+  color:var(--text-muted);
+  line-height:1.5;
+}
+
+/* ── Field groups ─────────────────────────── */
+.field{
+  margin-bottom:16px;
+}
+.field label{
+  display:block;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:#8b92a4;
+  margin-bottom:7px;
+}
+.field input[type=text],
+.field input[type=email],
+.field input[type=password]{
+  width:100%;
+  padding:12px 14px;
+  border-radius:var(--radius);
+  border:1px solid var(--border);
+  background:var(--input-bg);
+  color:white;
+  font-family:'DM Sans',sans-serif;
+  font-size:14.5px;
+  transition:border-color .18s, box-shadow .18s;
   outline:none;
 }
-button{
-  width:100%;
-  padding:12px;
-  background:var(--accent);
-  border:none;
+.field input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-dim);
+}
+.field input::placeholder{color:#3a4052;}
+.field .hint{
+  font-size:11.5px;
+  color:var(--text-muted);
+  margin-top:5px;
+}
+
+/* ── File upload ──────────────────────────── */
+.upload-box{
+  position:relative;
+  border:1.5px dashed var(--border);
   border-radius:var(--radius);
-  font-weight:600;
+  padding:18px;
+  text-align:center;
   cursor:pointer;
-  transition:0.15s;
+  transition:border-color .2s, background .2s;
+  background:var(--input-bg);
 }
-button:hover{
-  box-shadow:0 0 12px var(--accent);
+.upload-box:hover{
+  border-color:#3a4260;
+  background:#0f1420;
 }
-.error{
+.upload-box input[type=file]{
+  position:absolute;
+  inset:0;
+  opacity:0;
+  cursor:pointer;
+  width:100%;
+  height:100%;
+}
+.upload-icon{
+  font-size:22px;
+  margin-bottom:6px;
+}
+.upload-box span{
+  display:block;
   font-size:13px;
-  color:#ff6b6b;
-  margin-bottom:10px;
+  color:#5a6178;
 }
-label{
+.upload-box strong{
+  color:#8b92a4;
+  font-weight:600;
+}
+#pfpName{
+  margin-top:8px;
+  font-size:12px;
+  color:var(--accent);
+  min-height:16px;
+}
+
+/* ── Divider ──────────────────────────────── */
+.divider{
+  height:1px;
+  background:var(--border);
+  margin:24px 0;
+}
+
+/* ── Terms block ──────────────────────────── */
+.terms-block{
+  background:rgba(255,249,62,.04);
+  border:1px solid rgba(255,249,62,.12);
+  border-radius:var(--radius);
+  padding:18px 20px;
+  margin-bottom:20px;
+}
+.terms-scroll{
+  max-height:110px;
+  overflow-y:auto;
+  font-size:12.5px;
+  color:#6b7280;
+  line-height:1.7;
+  margin-bottom:16px;
+  padding-right:6px;
+  scrollbar-width:thin;
+  scrollbar-color:#2a2f3a transparent;
+}
+.terms-scroll::-webkit-scrollbar{width:4px;}
+.terms-scroll::-webkit-scrollbar-thumb{background:#2a2f3a;border-radius:4px;}
+.terms-scroll h4{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#4a5168;
+  margin:10px 0 4px;
+}
+.terms-scroll h4:first-child{margin-top:0;}
+.terms-checkbox{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  cursor:pointer;
+  user-select:none;
+}
+.terms-checkbox input[type=checkbox]{display:none;}
+.checkbox-box{
+  width:20px;
+  height:20px;
+  min-width:20px;
+  border-radius:6px;
+  border:1.5px solid #2a3044;
+  background:#0d1017;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all .15s;
+}
+.terms-checkbox input:checked + .checkbox-box{
+  background:var(--accent);
+  border-color:var(--accent);
+}
+.checkmark{
+  display:none;
+  width:11px;
+  height:11px;
+}
+.terms-checkbox input:checked + .checkbox-box .checkmark{display:block;}
+.terms-checkbox span{
+  font-size:13px;
+  color:#9ca3af;
+  line-height:1.45;
+}
+.terms-checkbox span a{
+  color:var(--accent);
+  text-decoration:none;
+  font-weight:600;
+}
+.terms-checkbox span a:hover{text-decoration:underline;}
+
+/* ── Error ────────────────────────────────── */
+.error{
+  font-size:12.5px;
+  color:#f87171;
+  margin-bottom:12px;
+  min-height:18px;
   display:flex;
   align-items:center;
   gap:6px;
-  font-size:14px;
-  margin-bottom:10px;
 }
+.error:not(:empty)::before{content:"⚠";font-size:12px;}
+
+/* ── Button ───────────────────────────────── */
+.btn-primary{
+  width:100%;
+  padding:14px;
+  background:var(--accent);
+  color:#0a0c10;
+  border:none;
+  border-radius:var(--radius);
+  font-family:'Syne',sans-serif;
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:.02em;
+  cursor:pointer;
+  transition:box-shadow .2s, transform .1s, filter .2s;
+  margin-top:4px;
+}
+.btn-primary:hover{
+  box-shadow:0 0 28px var(--accent-glow);
+  filter:brightness(1.06);
+}
+.btn-primary:active{transform:scale(.98);}
+
+/* ── Footer link ──────────────────────────── */
+.card-footer{
+  text-align:center;
+  margin-top:22px;
+  font-size:13px;
+  color:var(--text-muted);
+}
+.card-footer a{
+  color:var(--accent);
+  text-decoration:none;
+  font-weight:600;
+}
+.card-footer a:hover{text-decoration:underline;}
 </style>
 </head>
 <body>
 <div class="card">
-  <h2>Create Account</h2>
-  <input id="email" placeholder="Email">
-  <input id="username" placeholder="Unique Username">
-  <div id="userError" class="error"></div>
-  <input type="password" id="password" placeholder="Password">
-  <div>
-    <div class="small">Upload Profile Picture</div>
-    <input type="file" id="pfp" accept="image/*">
+  <div class="card-bar"></div>
+  <div class="card-body">
+
+    <div class="card-header">
+      <h2>Create your account</h2>
+      <p>Join the fortress. Your journey starts here.</p>
+    </div>
+
+    <!-- Email -->
+    <div class="field">
+      <label>Email address</label>
+      <input type="email" id="email" placeholder="you@example.com">
+    </div>
+
+    <!-- Username -->
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="username" placeholder="Choose a unique handle">
+      <div id="userError" class="error"></div>
+    </div>
+
+    <!-- Password -->
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="••••••••••">
+      <div class="hint">At least 8 characters recommended.</div>
+    </div>
+
+    <!-- Profile picture -->
+    <div class="field">
+      <label>Profile picture <span style="color:#3a4052;font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <div class="upload-box">
+        <input type="file" id="pfp" accept="image/*">
+        <div class="upload-icon">🖼</div>
+        <span><strong>Click to upload</strong> or drag & drop</span>
+        <span>PNG, JPG, GIF up to 5MB</span>
+      </div>
+      <div id="pfpName"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Terms -->
+    <div class="terms-block">
+      <div class="terms-scroll">
+        <h4>Terms of Use</h4>
+        By using Fortized you agree to use the platform respectfully and lawfully. You may not use Fortized to harass, impersonate, or harm other users. Accounts found in violation may be suspended or permanently banned without notice.
+        <h4>Privacy & Data</h4>
+        Your data is stored locally on your device. Fortized does not transmit personal information to external servers. Profile pictures and account details are saved in your browser's local storage.
+        <h4>Community Standards</h4>
+        All users are expected to maintain a respectful environment. Hate speech, threats, and spam are strictly prohibited. Fortized reserves the right to remove content that violates these standards.
+        <h4>Changes to Terms</h4>
+        These terms may be updated at any time. Continued use of the platform constitutes acceptance of any revised terms.
+      </div>
+      <label class="terms-checkbox">
+        <input type="checkbox" id="terms">
+        <div class="checkbox-box">
+          <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+            <path d="M2 6l3 3 5-5" stroke="#0a0c10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span>I have read and agree to the <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a></span>
+      </label>
+    </div>
+
+    <div id="error" class="error"></div>
+
+    <button class="btn-primary" id="signupBtn">Create Account →</button>
+
+    <div class="card-footer">
+      Already have an account? <a href="login.html">Sign in</a>
+    </div>
+
   </div>
-  <label>
-    <input type="checkbox" id="terms">
-    Accept Terms of Use &amp; Service
-  </label>
-  <div id="error" class="error"></div>
-  <button id="signupBtn">Create Account</button>
 </div>
 <script>
 const signupBtn = document.getElementById("signupBtn");
@@ -97,51 +370,48 @@ const termsCheckbox = document.getElementById("terms");
 const pfpInput = document.getElementById("pfp");
 const errorDiv = document.getElementById("error");
 const userErrorDiv = document.getElementById("userError");
+const pfpName = document.getElementById("pfpName");
+
+pfpInput.addEventListener("change", () => {
+  if(pfpInput.files[0]) pfpName.textContent = "✓ " + pfpInput.files[0].name;
+});
+
 signupBtn.addEventListener("click",()=>{
   const email = emailInput.value.trim();
   const username = usernameInput.value.trim();
   const password = passwordInput.value;
   const terms = termsCheckbox.checked;
+  errorDiv.textContent="";
+  userErrorDiv.textContent="";
   if(!email || !username || !password){
     errorDiv.textContent="All fields are required.";
     return;
   }
   if(!terms){
-    errorDiv.textContent="You must accept the terms.";
+    errorDiv.textContent="You must accept the terms to continue.";
     return;
   }
   let users = JSON.parse(localStorage.getItem("fortized_users")) || [];
   if(users.find(u=>u.username.toLowerCase()===username.toLowerCase())){
     userErrorDiv.textContent="Username already taken.";
     return;
-  }else{
-    userErrorDiv.textContent="";
   }
   const file = pfpInput.files[0];
   const reader = new FileReader();
   reader.onload = function(){
     const newUser = {
-      email,
-      username,
-      password,
+      email, username, password,
       pfp: reader.result || null,
-      onyx:5,
-      radianceUntil:null,
-      bastions:[],
-      friends:[],
-      dms:[],
-      lastDaily:null
+      onyx:5, radianceUntil:null,
+      bastions:[], friends:[], dms:[], lastDaily:null
     };
     users.push(newUser);
     localStorage.setItem("fortized_users",JSON.stringify(users));
     localStorage.setItem("fortized_current_user",username);
     window.location.href="app.html";
   };
-  if(file){
-    reader.readAsDataURL(file);
-  } else {
-    reader.onload();
-  }
+  if(file){ reader.readAsDataURL(file); }
+  else { reader.onload(); }
 });
 </script>
 </body>
