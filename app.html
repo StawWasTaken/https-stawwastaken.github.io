@@ -1,188 +1,1688 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Fortized App</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>Fortized</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
+/* ── TOKENS ──────────────────────────────────────── */
 :root{
-  --bg:#13161d;
-  --panel:#1c2029;
   --accent:#fff93e;
+  --accent-dim:rgba(255,249,62,.1);
+  --accent-mid:rgba(255,249,62,.2);
+  --accent-glow:rgba(255,249,62,.35);
+  --bg:#080a0f;
+  --rail:#05070b;
+  --sidebar:#0c0f16;
+  --channel:#0e1119;
+  --panel:#111520;
+  --panel2:#141820;
+  --border:#1a2030;
+  --border-light:rgba(255,255,255,.05);
   --radius:12px;
+  --muted:#5a6478;
+  --muted-light:#8b95a8;
+  --text:#e8ecf2;
 }
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  display:flex;
+}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#1e2535;border-radius:4px;}
 
-*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
-body{background:var(--bg);color:white;display:flex;height:100vh;}
-
-.sidebar{
-  width:80px;
-  background:#0f1218;
+/* ── ICON RAIL ───────────────────────────────────── */
+.rail{
+  width:68px;
+  min-width:68px;
+  background:var(--rail);
+  border-right:1px solid var(--border);
   display:flex;
   flex-direction:column;
   align-items:center;
-  padding:20px 0;
-  gap:20px;
-}
-
-.sidebar img{width:36px;cursor:pointer;}
-
-.main{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-}
-
-.topbar{
-  height:60px;
-  background:var(--panel);
-  display:flex;
-  justify-content:flex-end;
-  align-items:center;
-  padding:0 20px;
-  gap:20px;
-}
-
-.onyx{
-  display:flex;
-  align-items:center;
+  padding:14px 0;
   gap:6px;
+  z-index:10;
+}
+.rail-logo{
+  width:40px;height:40px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:8px;
   cursor:pointer;
 }
-
-.onyx img{width:18px;}
-
-.content{
-  flex:1;
-  padding:30px;
-  overflow:auto;
+.rail-logo img{width:32px;height:32px;object-fit:contain;}
+.rail-sep{
+  width:32px;height:1px;
+  background:var(--border);
+  margin:4px 0;
+}
+.rail-btn{
+  width:44px;height:44px;
+  border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  transition:background .15s, border-radius .15s;
+  position:relative;
+  flex-shrink:0;
+}
+.rail-btn img{width:26px;height:26px;object-fit:contain;}
+.rail-btn span.icon{font-size:18px;line-height:1;}
+.rail-btn:hover{background:rgba(255,255,255,.06);border-radius:12px;}
+.rail-btn.active{background:var(--accent-dim);border-radius:12px;}
+.rail-btn.active::before{
+  content:"";
+  position:absolute;
+  left:-14px;top:50%;transform:translateY(-50%);
+  width:3px;height:26px;
+  background:var(--accent);
+  border-radius:0 3px 3px 0;
+}
+/* tooltip */
+.rail-btn[data-tip]:hover::after{
+  content:attr(data-tip);
+  position:absolute;
+  left:calc(100% + 10px);
+  top:50%;transform:translateY(-50%);
+  background:#0e1119;
+  border:1px solid var(--border);
+  color:var(--text);
+  font-size:12px;font-weight:600;
+  padding:5px 10px;
+  border-radius:8px;
+  white-space:nowrap;
+  z-index:999;
+  pointer-events:none;
+}
+.rail-bastion{
+  width:40px;height:40px;
+  border-radius:14px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  font-size:16px;
+  transition:border-color .15s, background .15s, border-radius .15s;
+  position:relative;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.rail-bastion img{width:100%;height:100%;object-fit:cover;}
+.rail-bastion:hover,.rail-bastion.active{border-color:var(--accent);border-radius:12px;background:var(--accent-dim);}
+.rail-bastion.active::before{
+  content:"";position:absolute;left:-14px;top:50%;transform:translateY(-50%);
+  width:3px;height:26px;background:var(--accent);border-radius:0 3px 3px 0;
 }
 
-.section{display:none;}
-.section.active{display:block;}
+/* ── LEFT SIDEBAR ────────────────────────────────── */
+.sidebar{
+  width:240px;min-width:240px;
+  background:var(--sidebar);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.sidebar-header{
+  height:52px;
+  display:flex;align-items:center;
+  padding:0 16px;
+  border-bottom:1px solid var(--border);
+  font-family:'Syne',sans-serif;
+  font-size:15px;font-weight:700;
+  letter-spacing:-.2px;
+  flex-shrink:0;
+  gap:8px;
+}
+.sidebar-header .header-actions{margin-left:auto;display:flex;gap:4px;}
+.sidebar-header .header-actions button{
+  width:28px;height:28px;border-radius:8px;
+  background:transparent;border:none;
+  color:var(--muted);font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .15s, color .15s;
+}
+.sidebar-header .header-actions button:hover{background:rgba(255,255,255,.06);color:#fff;}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:8px 0;}
+.sidebar-section-label{
+  font-size:11px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);
+  padding:14px 16px 6px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sidebar-section-label button{
+  background:none;border:none;color:var(--muted);
+  font-size:18px;cursor:pointer;line-height:1;
+  width:18px;height:18px;display:flex;align-items:center;justify-content:center;
+  border-radius:4px;transition:background .15s, color .15s;
+}
+.sidebar-section-label button:hover{background:rgba(255,255,255,.06);color:#fff;}
+.sidebar-item{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 12px;margin:1px 8px;
+  border-radius:8px;cursor:pointer;
+  font-size:14px;color:var(--muted-light);
+  transition:background .12s, color .12s;
+  position:relative;
+}
+.sidebar-item:hover{background:rgba(255,255,255,.05);color:#fff;}
+.sidebar-item.active{background:rgba(255,249,62,.08);color:var(--accent);}
+.sidebar-item .item-icon{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--panel);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;overflow:hidden;
+}
+.sidebar-item .item-icon img{width:100%;height:100%;object-fit:cover;}
+.sidebar-item .item-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sidebar-item .item-badge{
+  background:var(--accent);color:#080a0f;
+  font-size:10px;font-weight:800;
+  padding:1px 6px;border-radius:100px;
+  min-width:18px;text-align:center;
+  flex-shrink:0;
+}
+.online-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:#3ecf6e;flex-shrink:0;
+}
+.channel-item{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 10px;margin:1px 8px;
+  border-radius:8px;cursor:pointer;
+  font-size:13.5px;color:var(--muted);
+  transition:background .12s, color .12s;
+}
+.channel-item:hover{background:rgba(255,255,255,.05);color:var(--text);}
+.channel-item.active{background:rgba(255,249,62,.08);color:var(--accent);}
+.channel-item .ch-icon{font-size:14px;width:16px;text-align:center;flex-shrink:0;}
+.channel-item .ch-name{flex:1;}
 
-.card{
+/* ── USER BAR (bottom of sidebar) ───────────────── */
+.userbar{
+  height:56px;
+  background:rgba(5,7,11,.6);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;
+  padding:0 10px;gap:8px;
+  flex-shrink:0;
+}
+.userbar-avatar{
+  width:34px;height:34px;border-radius:50%;
+  background:var(--panel);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;overflow:hidden;flex-shrink:0;position:relative;cursor:pointer;
+}
+.userbar-avatar img{width:100%;height:100%;object-fit:cover;}
+.userbar-avatar .status-ring{
+  position:absolute;bottom:0;right:0;
+  width:11px;height:11px;border-radius:50%;
+  background:#3ecf6e;border:2px solid var(--sidebar);
+}
+.userbar-info{flex:1;min-width:0;}
+.userbar-name{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.userbar-tag{font-size:11px;color:var(--muted);}
+.userbar-actions{display:flex;gap:2px;}
+.userbar-actions button{
+  width:30px;height:30px;border-radius:8px;
+  background:transparent;border:none;
+  color:var(--muted);font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .12s,color .12s;
+}
+.userbar-actions button:hover{background:rgba(255,255,255,.06);color:#fff;}
+
+/* ── MAIN AREA ───────────────────────────────────── */
+.main{
+  flex:1;min-width:0;
+  display:flex;flex-direction:column;
+  background:var(--bg);
+}
+
+/* Top bar */
+.topbar{
+  height:52px;
   background:var(--panel);
-  padding:20px;
-  border-radius:var(--radius);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;
+  padding:0 20px;gap:12px;
+  flex-shrink:0;
+}
+.topbar-title{
+  font-family:'Syne',sans-serif;
+  font-size:15px;font-weight:700;
+  display:flex;align-items:center;gap:8px;
+}
+.topbar-title .ch-icon{font-size:16px;color:var(--muted);}
+.topbar-sep{width:1px;height:20px;background:var(--border);margin:0 4px;}
+.topbar-desc{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
+.topbar-actions{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.topbar-actions button{
+  background:transparent;border:none;color:var(--muted);
+  font-size:18px;cursor:pointer;width:34px;height:34px;
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  transition:background .12s,color .12s;
+}
+.topbar-actions button:hover{background:rgba(255,255,255,.06);color:#fff;}
+.onyx-pill{
+  display:flex;align-items:center;gap:6px;
+  background:var(--accent-dim);border:1px solid var(--accent-mid);
+  border-radius:100px;padding:5px 12px;
+  font-size:13px;font-weight:600;color:var(--accent);
+  cursor:pointer;transition:background .15s;
+}
+.onyx-pill:hover{background:rgba(255,249,62,.15);}
+.onyx-pill img{width:16px;height:16px;object-fit:contain;}
+
+/* ── CONTENT ─────────────────────────────────────── */
+.content{flex:1;overflow-y:auto;position:relative;}
+.view{display:none;height:100%;}
+.view.active{display:flex;flex-direction:column;}
+
+/* ── HOME VIEW ───────────────────────────────────── */
+.home-view{
+  display:none;height:100%;
+}
+.home-view.active{display:flex;}
+.home-left{
+  width:240px;min-width:240px;
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  background:var(--channel);
+}
+.home-main{flex:1;overflow-y:auto;padding:32px 28px;}
+.home-hero{
+  padding:40px 0 32px;
+  display:flex;align-items:center;gap:24px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:28px;
+}
+.home-hero-avatar{
+  width:72px;height:72px;border-radius:50%;
+  background:var(--panel);border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;overflow:hidden;flex-shrink:0;
+}
+.home-hero-avatar img{width:100%;height:100%;object-fit:cover;}
+.home-hero-text h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px;}
+.home-hero-text p{font-size:13.5px;color:var(--muted-light);}
+.radiance-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:linear-gradient(90deg,rgba(255,200,62,.12),rgba(255,249,62,.12));
+  border:1px solid rgba(255,220,62,.25);
+  border-radius:100px;padding:3px 10px;
+  font-size:11.5px;font-weight:700;color:#ffd93e;
+  margin-top:8px;
+}
+.home-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;}
+.home-card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;padding:20px;
+  transition:border-color .2s,transform .15s;cursor:pointer;
+}
+.home-card:hover{border-color:rgba(255,249,62,.18);transform:translateY(-2px);}
+.home-card h4{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;}
+.home-card p{font-size:12.5px;color:var(--muted);line-height:1.5;}
+.home-card .card-count{
+  font-family:'Syne',sans-serif;font-size:26px;font-weight:800;
+  color:var(--accent);margin-bottom:4px;
+}
+/* Friends list in home-left */
+.friend-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 12px;margin:1px 6px;
+  border-radius:8px;cursor:pointer;
+  transition:background .12s;
+}
+.friend-item:hover{background:rgba(255,255,255,.05);}
+.friend-item.active{background:rgba(255,249,62,.07);}
+.friend-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--panel);border:1px solid var(--border);
+  font-size:13px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;overflow:hidden;position:relative;
+}
+.friend-avatar img{width:100%;height:100%;object-fit:cover;}
+.friend-avatar .f-status{
+  position:absolute;bottom:0;right:0;
+  width:9px;height:9px;border-radius:50%;
+  border:2px solid var(--channel);
+}
+.f-status.online{background:#3ecf6e;}
+.f-status.away{background:#f59e0b;}
+.f-status.offline{background:#374151;}
+.friend-info{flex:1;min-width:0;}
+.friend-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.friend-status{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ── DM CHAT VIEW ────────────────────────────────── */
+.chat-view{flex:1;display:flex;flex-direction:column;}
+.chat-messages{
+  flex:1;overflow-y:auto;
+  padding:20px 24px;
+  display:flex;flex-direction:column;gap:2px;
+}
+.chat-welcome{
+  padding:24px 0 20px;
+  border-bottom:1px solid var(--border);
   margin-bottom:20px;
 }
-
-.atelier-card{
-  border:1px solid transparent;
-  transition:.2s;
+.chat-welcome .welcome-avatar{
+  width:64px;height:64px;border-radius:50%;
+  background:var(--panel);border:2px solid var(--border);
+  font-size:24px;display:flex;align-items:center;justify-content:center;
+  margin-bottom:14px;overflow:hidden;
 }
-
-.atelier-card:hover{
-  border:1px solid var(--accent);
-  box-shadow:0 0 10px var(--accent);
+.chat-welcome .welcome-avatar img{width:100%;height:100%;object-fit:cover;}
+.chat-welcome h3{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px;}
+.chat-welcome p{font-size:13.5px;color:var(--muted-light);}
+.msg-group{display:flex;gap:12px;padding:4px 0;margin-bottom:2px;}
+.msg-group:hover{background:rgba(255,255,255,.02);border-radius:8px;padding:4px 8px;margin:2px -8px;}
+.msg-group.own{flex-direction:row-reverse;}
+.msg-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--panel);border:1px solid var(--border);
+  font-size:14px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:2px;overflow:hidden;
 }
-
-button{
-  margin-top:10px;
-  padding:8px 12px;
-  border:none;
-  border-radius:var(--radius);
-  background:var(--accent);
-  cursor:pointer;
+.msg-avatar img{width:100%;height:100%;object-fit:cover;}
+.msg-content{max-width:68%;}
+.msg-meta{display:flex;align-items:baseline;gap:8px;margin-bottom:3px;}
+.msg-author{font-size:13px;font-weight:600;color:#fff;}
+.msg-time{font-size:11px;color:var(--muted);}
+.msg-bubble{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:4px 12px 12px 12px;
+  padding:9px 14px;font-size:14px;color:var(--text);
+  line-height:1.55;word-break:break-word;
 }
-
-.knight{
-  position:fixed;
-  bottom:10px;
-  right:10px;
-  width:120px;
-  opacity:.8;
+.msg-group.own .msg-bubble{
+  background:rgba(255,249,62,.1);border-color:rgba(255,249,62,.15);
+  border-radius:12px 4px 12px 12px;color:var(--text);
 }
+.msg-group.own .msg-meta{flex-direction:row-reverse;}
+/* consecutive messages */
+.msg-cont .msg-avatar{opacity:0;}
+.msg-cont .msg-meta{display:none;}
+.msg-cont .msg-bubble{margin-top:2px;}
+.chat-input-wrap{
+  padding:12px 20px 16px;
+  flex-shrink:0;
+}
+.chat-input-box{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;
+  display:flex;align-items:flex-end;gap:8px;
+  padding:10px 14px;
+  transition:border-color .18s;
+}
+.chat-input-box:focus-within{border-color:rgba(255,249,62,.3);}
+.chat-input-box textarea{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;
+  resize:none;max-height:120px;line-height:1.5;padding:2px 0;
+}
+.chat-input-box textarea::placeholder{color:var(--muted);}
+.chat-send{
+  width:34px;height:34px;border-radius:9px;
+  background:var(--accent);border:none;
+  color:#080a0f;font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:filter .15s;
+}
+.chat-send:hover{filter:brightness(1.1);}
+.chat-input-actions{display:flex;gap:4px;align-items:center;}
+.chat-input-actions button{
+  background:none;border:none;color:var(--muted);
+  font-size:18px;cursor:pointer;width:32px;height:32px;
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  transition:background .12s,color .12s;
+}
+.chat-input-actions button:hover{background:rgba(255,255,255,.06);color:#fff;}
+
+/* ── BASTION VIEW ────────────────────────────────── */
+.bastion-view{flex:1;display:flex;flex-direction:column;}
+.empty-state{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:16px;color:var(--muted);text-align:center;padding:40px;
+}
+.empty-state .empty-icon{font-size:52px;opacity:.4;}
+.empty-state h3{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--muted-light);}
+.empty-state p{font-size:14px;max-width:320px;line-height:1.6;}
+.btn-accent{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--accent);color:#080a0f;
+  padding:11px 22px;border-radius:var(--radius);
+  font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
+  border:none;cursor:pointer;transition:filter .15s,transform .1s;
+}
+.btn-accent:hover{filter:brightness(1.06);transform:translateY(-1px);}
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:8px;
+  background:transparent;color:var(--muted-light);
+  padding:10px 20px;border-radius:var(--radius);
+  font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
+  border:1px solid var(--border);cursor:pointer;
+  transition:border-color .15s,background .15s;
+}
+.btn-ghost:hover{border-color:#2e3a52;background:rgba(255,255,255,.04);}
+
+/* ── DISCOVER VIEW ───────────────────────────────── */
+.discover-view{flex:1;overflow-y:auto;padding:32px 28px;}
+.discover-hero{
+  background:
+    linear-gradient(105deg,rgba(8,10,15,.97) 40%, rgba(8,10,15,.8) 100%),
+    url("Fortized banner.png") center/cover no-repeat;
+  border:1px solid var(--border);border-radius:20px;
+  padding:48px 40px;
+  margin-bottom:32px;
+  position:relative;overflow:hidden;
+}
+.discover-hero::before{
+  content:"";position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,249,62,.01) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,249,62,.01) 1px, transparent 1px);
+  background-size:60px 60px;
+}
+.discover-hero h2{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;letter-spacing:-.8px;margin-bottom:8px;position:relative;}
+.discover-hero p{font-size:15px;color:var(--muted-light);margin-bottom:24px;position:relative;max-width:480px;}
+.discover-search{
+  display:flex;align-items:center;gap:12px;
+  max-width:440px;position:relative;
+}
+.discover-search input{
+  flex:1;background:rgba(255,255,255,.06);
+  border:1px solid var(--border);border-radius:10px;
+  color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;
+  padding:11px 16px 11px 40px;outline:none;
+  transition:border-color .18s;
+}
+.discover-search input:focus{border-color:rgba(255,249,62,.3);}
+.discover-search input::placeholder{color:var(--muted);}
+.discover-search .search-icon{
+  position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  font-size:16px;color:var(--muted);pointer-events:none;
+}
+.bastion-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.bastion-card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;
+  cursor:pointer;transition:border-color .2s,transform .15s;
+}
+.bastion-card:hover{border-color:rgba(255,249,62,.2);transform:translateY(-3px);}
+.bastion-banner{
+  height:80px;
+  background:linear-gradient(135deg,#1a2040,#0d1425);
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;
+  position:relative;overflow:hidden;
+}
+.bastion-banner::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,.4));
+}
+.bastion-body{padding:16px;}
+.bastion-meta{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.bastion-icon{
+  width:44px;height:44px;border-radius:12px;
+  background:var(--panel2);border:2px solid var(--sidebar);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;margin-top:-28px;position:relative;z-index:1;flex-shrink:0;
+}
+.bastion-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
+.bastion-desc{font-size:12.5px;color:var(--muted-light);line-height:1.55;margin-bottom:10px;}
+.bastion-stats{display:flex;gap:12px;font-size:12px;color:var(--muted);}
+.bastion-stats span{display:flex;align-items:center;gap:4px;}
+
+/* ── ATELIER VIEW ────────────────────────────────── */
+.atelier-view{flex:1;overflow-y:auto;padding:32px 28px;}
+.atelier-hero{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:20px;padding:28px 32px;margin-bottom:28px;
+}
+.atelier-balance{display:flex;align-items:center;gap:14px;}
+.atelier-balance img{width:36px;height:36px;object-fit:contain;}
+.atelier-balance-text h3{font-size:13px;font-weight:600;color:var(--muted-light);margin-bottom:2px;}
+.atelier-balance-text .amount{
+  font-family:'Syne',sans-serif;font-size:30px;font-weight:800;
+  color:var(--accent);letter-spacing:-.5px;
+}
+.daily-btn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  background:rgba(255,249,62,.07);border:1px solid rgba(255,249,62,.18);
+  border-radius:14px;padding:14px 24px;cursor:pointer;
+  transition:background .15s;
+}
+.daily-btn:hover{background:rgba(255,249,62,.12);}
+.daily-btn span{font-size:11px;color:var(--muted-light);}
+.daily-btn strong{font-family:'Syne',sans-serif;font-size:14px;color:var(--accent);}
+.daily-btn.claimed{opacity:.5;cursor:not-allowed;}
+.atelier-section-title{
+  font-family:'Syne',sans-serif;font-size:16px;font-weight:700;
+  letter-spacing:-.2px;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+.atelier-section-title::before{content:"";width:16px;height:1.5px;background:var(--accent);}
+.radiance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:32px;}
+.rad-card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:16px;padding:24px 20px;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  gap:10px;cursor:pointer;
+  transition:border-color .2s,transform .15s,box-shadow .2s;
+  position:relative;overflow:hidden;
+}
+.rad-card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  opacity:0;transition:opacity .25s;
+}
+.rad-card:hover{border-color:rgba(255,249,62,.25);transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.4);}
+.rad-card:hover::before{opacity:1;}
+.rad-card.best-value{border-color:rgba(255,249,62,.25);}
+.rad-card .best-badge{
+  position:absolute;top:12px;right:12px;
+  background:var(--accent);color:#080a0f;
+  font-size:9.5px;font-weight:800;letter-spacing:.06em;
+  padding:2px 8px;border-radius:100px;text-transform:uppercase;
+}
+.rad-card .rad-icon{font-size:32px;}
+.rad-card .rad-duration{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;}
+.rad-card .rad-price{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent);}
+.rad-card .rad-price span{font-size:12px;color:var(--muted-light);font-family:'DM Sans',sans-serif;font-weight:400;}
+.rad-card .rad-features{font-size:12.5px;color:var(--muted-light);line-height:1.6;}
+
+/* ── PROFILE VIEW ────────────────────────────────── */
+.profile-view{flex:1;overflow-y:auto;}
+.profile-banner{
+  height:180px;
+  background:linear-gradient(135deg,#0f1830,#1a0f30,#0f2030);
+  position:relative;overflow:hidden;
+}
+.profile-banner::before{
+  content:"";position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,249,62,.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,249,62,.015) 1px, transparent 1px);
+  background-size:40px 40px;
+}
+.profile-content{padding:0 32px 40px;}
+.profile-avatar-row{
+  display:flex;align-items:flex-end;gap:18px;
+  margin-top:-44px;margin-bottom:20px;position:relative;
+}
+.profile-avatar{
+  width:88px;height:88px;border-radius:50%;
+  background:var(--panel);border:4px solid var(--bg);
+  font-size:32px;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;flex-shrink:0;
+}
+.profile-avatar img{width:100%;height:100%;object-fit:cover;}
+.profile-actions{margin-left:auto;display:flex;gap:10px;padding-bottom:6px;}
+.profile-name{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px;}
+.profile-handle{font-size:14px;color:var(--muted-light);}
+.profile-stats{
+  display:flex;gap:0;
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;margin-bottom:24px;
+}
+.profile-stat{
+  flex:1;padding:18px;text-align:center;
+  border-right:1px solid var(--border);
+}
+.profile-stat:last-child{border-right:none;}
+.profile-stat-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent);}
+.profile-stat-key{font-size:12px;color:var(--muted);margin-top:2px;}
+.settings-section{margin-bottom:28px;}
+.settings-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.settings-item{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:10px;margin-bottom:8px;
+  cursor:pointer;transition:border-color .15s,background .15s;
+}
+.settings-item:hover{border-color:rgba(255,249,62,.15);background:rgba(255,249,62,.03);}
+.settings-item .si-icon{font-size:18px;width:32px;text-align:center;}
+.settings-item .si-text{flex:1;}
+.settings-item .si-label{font-size:14px;font-weight:600;}
+.settings-item .si-sub{font-size:12.5px;color:var(--muted-light);}
+.settings-item .si-arrow{color:var(--muted);font-size:14px;}
+
+/* ── MODAL ───────────────────────────────────────── */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(8px);
+  z-index:1000;align-items:center;justify-content:center;
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:20px;width:100%;max-width:420px;
+  overflow:hidden;
+  animation:modalIn .25s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.94) translateY(12px);}to{opacity:1;transform:none;}}
+.modal-bar{height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
+.modal-body{padding:32px;}
+.modal-title{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;margin-bottom:6px;}
+.modal-sub{font-size:13.5px;color:var(--muted-light);margin-bottom:24px;}
+.modal-input{
+  width:100%;padding:11px 14px;
+  background:#07090e;border:1px solid var(--border);
+  border-radius:10px;color:#fff;
+  font-family:'DM Sans',sans-serif;font-size:14px;
+  outline:none;margin-bottom:14px;
+  transition:border-color .18s;
+}
+.modal-input:focus{border-color:rgba(255,249,62,.4);}
+.modal-input::placeholder{color:#252c3d;}
+.modal-actions{display:flex;gap:10px;margin-top:6px;}
+.modal-actions .btn-accent,.modal-actions .btn-ghost{flex:1;justify-content:center;}
+.modal-error{font-size:12.5px;color:#f87171;margin-bottom:10px;min-height:16px;display:flex;align-items:center;gap:6px;}
+.modal-error:not(:empty)::before{content:"⚠";}
+
+/* ── NOTIFICATION TOAST ──────────────────────────── */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:2000;
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:14px 20px;
+  font-size:13.5px;font-weight:500;
+  box-shadow:0 20px 50px rgba(0,0,0,.6);
+  transform:translateY(20px);opacity:0;
+  transition:transform .3s cubic-bezier(.22,1,.36,1), opacity .3s;
+  max-width:300px;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-left:3px solid #3ecf6e;color:#a3e8b8;}
+.toast.error{border-left:3px solid #f87171;color:#fca5a5;}
+.toast.info{border-left:3px solid var(--accent);color:var(--accent);}
 </style>
 </head>
-
 <body>
 
-<div class="sidebar">
-  <img src="Fortized icon.png" onclick="show('home')">
-  <img src="Onyx.png" onclick="show('atelier')">
-  <img src="Fortized Knight.png" onclick="show('bastions')">
+<!-- ICON RAIL -->
+<div class="rail" id="rail">
+  <div class="rail-logo" onclick="navigate('home')" data-tip="Home">
+    <img src="Fortized icon.png" alt="Fortized">
+  </div>
+  <div class="rail-sep"></div>
+  <div class="rail-btn active" id="rail-home" onclick="navigate('home')" data-tip="Home">
+    <span class="icon">🏠</span>
+  </div>
+  <div class="rail-btn" id="rail-discover" onclick="navigate('discover')" data-tip="Discover">
+    <span class="icon">🧭</span>
+  </div>
+  <div class="rail-btn" id="rail-atelier" onclick="navigate('atelier')" data-tip="Atelier">
+    <img src="Onyx.png" onerror="this.parentElement.innerHTML='<span class=icon>💎</span>'">
+  </div>
+  <div class="rail-sep"></div>
+  <!-- Bastion icons injected here -->
+  <div id="rail-bastions"></div>
+  <div class="rail-btn" id="rail-add-bastion" onclick="openCreateBastion()" data-tip="Create Bastion" style="border:1.5px dashed #1a2030;border-radius:14px;">
+    <span class="icon" style="font-size:22px;color:var(--muted);">+</span>
+  </div>
+  <div style="margin-top:auto;"></div>
+  <div class="rail-btn" id="rail-profile" onclick="navigate('profile')" data-tip="Profile & Settings">
+    <span class="icon">⚙️</span>
+  </div>
 </div>
 
-<div class="main">
+<!-- SIDEBAR (context-sensitive) -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebar-header">
+    <span id="sidebar-title">Home</span>
+    <div class="header-actions" id="sidebar-header-actions"></div>
+  </div>
+  <div class="sidebar-scroll" id="sidebar-scroll"></div>
+  <div class="userbar" id="userbar">
+    <div class="userbar-avatar" id="userbar-avatar" onclick="navigate('profile')">
+      <div class="status-ring"></div>
+    </div>
+    <div class="userbar-info">
+      <div class="userbar-name" id="userbar-name">—</div>
+      <div class="userbar-tag" id="userbar-tag">Online</div>
+    </div>
+    <div class="userbar-actions">
+      <button title="Mute" onclick="toast('Muted','info')">🎤</button>
+      <button title="Deafen" onclick="toast('Deafened','info')">🎧</button>
+      <button title="Log Out" onclick="logout()">🚪</button>
+    </div>
+  </div>
+</div>
 
+<!-- MAIN -->
+<div class="main">
+  <!-- TOP BAR -->
   <div class="topbar">
-    <div class="onyx" onclick="show('atelier')">
-      <img src="Onyx.png">
-      <span id="onyxCount">25</span>
+    <div class="topbar-title" id="topbar-title">
+      <span class="ch-icon">🏠</span>
+      <span>Home</span>
+    </div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-desc" id="topbar-desc">Welcome to Fortized</div>
+    <div class="topbar-actions">
+      <div class="onyx-pill" onclick="navigate('atelier')" id="onyx-pill-top">
+        <img src="Onyx.png" onerror="this.outerHTML='💎'">
+        <span id="topbar-onyx">0</span>
+      </div>
+      <button title="Search" onclick="toast('Search coming soon','info')">🔍</button>
+      <button title="Notifications" onclick="toast('No new notifications','info')">🔔</button>
     </div>
   </div>
 
+  <!-- CONTENT -->
   <div class="content">
 
-    <div id="home" class="section active">
-      <h2>Home</h2>
-      <div class="card">Friends List</div>
-      <div class="card">Direct Messages</div>
-    </div>
-
-    <div id="atelier" class="section">
-      <h2>🎨 Atelier</h2>
-      <div class="card">Balance: <span id="balance">25</span> Onyx</div>
-
-      <div class="card atelier-card">
-        1 Day – 110 Onyx
-        <button onclick="buy(110)">Activate</button>
+    <!-- HOME VIEW -->
+    <div id="view-home" class="view active" style="display:flex;flex-direction:row;">
+      <div class="home-left" id="home-left">
+        <div class="sidebar-header">
+          <span>Direct Messages</span>
+          <div class="header-actions">
+            <button onclick="openNewDM()" title="New DM">+</button>
+          </div>
+        </div>
+        <div class="sidebar-scroll" id="dm-list"></div>
       </div>
-
-      <div class="card atelier-card">
-        7 Days – 770 Onyx
-        <button onclick="buy(770)">Activate</button>
-      </div>
-
-      <div class="card atelier-card">
-        30 Days – 3,300 Onyx
-        <button onclick="buy(3300)">Activate</button>
+      <div id="home-main-area" style="flex:1;display:flex;flex-direction:column;">
+        <!-- DM chat or home landing injected here -->
       </div>
     </div>
 
-    <div id="bastions" class="section">
-      <h2>🏰 Bastions</h2>
-      <div class="card">Your Bastions Appear Here</div>
+    <!-- BASTION VIEW -->
+    <div id="view-bastion" class="view" style="display:none;flex-direction:row;">
+      <div id="bastion-main" style="flex:1;display:flex;flex-direction:column;"></div>
     </div>
 
-    <div id="discover" class="section">
-      <h2>Discover Public Bastions</h2>
-      <div class="card">Public Bastion Example</div>
+    <!-- DISCOVER VIEW -->
+    <div id="view-discover" class="view discover-view" style="display:none;flex-direction:column;">
+      <div class="discover-hero">
+        <h2>Discover Bastions</h2>
+        <p>Find public communities, join the battle, and make your mark.</p>
+        <div class="discover-search">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search bastions..." id="discover-search-input" oninput="filterBastions()">
+        </div>
+      </div>
+      <div class="bastion-grid" id="bastion-grid"></div>
     </div>
 
-    <div id="blog" class="section">
-      <h2>Fortized Blog</h2>
-      <div class="card">Official Updates</div>
+    <!-- ATELIER VIEW -->
+    <div id="view-atelier" class="view atelier-view" style="display:none;flex-direction:column;">
+      <div class="atelier-hero">
+        <div class="atelier-balance">
+          <img src="Onyx.png" onerror="this.outerHTML='💎'">
+          <div class="atelier-balance-text">
+            <h3>Onyx Balance</h3>
+            <div class="amount" id="atelier-balance">0</div>
+          </div>
+        </div>
+        <div class="daily-btn" id="daily-btn" onclick="claimDaily()">
+          <span>Daily Reward</span>
+          <strong>+5 Onyx</strong>
+          <span id="daily-status">Claim</span>
+        </div>
+      </div>
+      <div class="atelier-section-title">Radiance — Premium Status</div>
+      <div class="radiance-grid">
+        <div class="rad-card" onclick="buyRadiance(110,'1 Day')">
+          <div class="rad-icon">✨</div>
+          <div class="rad-duration">1 Day</div>
+          <div class="rad-price">110 <span>Onyx</span></div>
+          <div class="rad-features">Full Radiance perks<br>for 24 hours</div>
+          <button class="btn-accent" style="width:100%;justify-content:center;margin-top:4px;font-size:13px;padding:9px;">Activate</button>
+        </div>
+        <div class="rad-card best-value" onclick="buyRadiance(770,'7 Days')">
+          <div class="best-badge">Best Value</div>
+          <div class="rad-icon">⚡</div>
+          <div class="rad-duration">7 Days</div>
+          <div class="rad-price">770 <span>Onyx</span></div>
+          <div class="rad-features">Full Radiance perks<br>for one week</div>
+          <button class="btn-accent" style="width:100%;justify-content:center;margin-top:4px;font-size:13px;padding:9px;">Activate</button>
+        </div>
+        <div class="rad-card" onclick="buyRadiance(3300,'30 Days')">
+          <div class="rad-icon">👑</div>
+          <div class="rad-duration">30 Days</div>
+          <div class="rad-price">3,300 <span>Onyx</span></div>
+          <div class="rad-features">Full Radiance perks<br>for a full month</div>
+          <button class="btn-accent" style="width:100%;justify-content:center;margin-top:4px;font-size:13px;padding:9px;">Activate</button>
+        </div>
+      </div>
+      <div class="atelier-section-title">Radiance Perks</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:32px;">
+        <div class="settings-item" style="cursor:default;">
+          <span class="si-icon">🎨</span>
+          <div class="si-text"><div class="si-label">Custom Profile Badge</div><div class="si-sub">Exclusive Radiance crown on your profile</div></div>
+        </div>
+        <div class="settings-item" style="cursor:default;">
+          <span class="si-icon">🌟</span>
+          <div class="si-text"><div class="si-label">Animated Avatar Border</div><div class="si-sub">Glowing frame around your avatar</div></div>
+        </div>
+        <div class="settings-item" style="cursor:default;">
+          <span class="si-icon">💬</span>
+          <div class="si-text"><div class="si-label">Extended Messages</div><div class="si-sub">Up to 4000 chars per message</div></div>
+        </div>
+        <div class="settings-item" style="cursor:default;">
+          <span class="si-icon">📁</span>
+          <div class="si-text"><div class="si-label">100MB File Uploads</div><div class="si-sub">Standard limit is 8MB</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE VIEW -->
+    <div id="view-profile" class="view profile-view" style="display:none;flex-direction:column;">
+      <div class="profile-banner"></div>
+      <div class="profile-content">
+        <div class="profile-avatar-row">
+          <div class="profile-avatar" id="profile-avatar-big"></div>
+          <div style="flex:1;">
+            <div class="profile-name" id="profile-name-big">—</div>
+            <div class="profile-handle" id="profile-handle">@—</div>
+          </div>
+          <div class="profile-actions">
+            <button class="btn-ghost" onclick="toast('Edit profile coming soon','info')" style="font-size:13px;padding:8px 16px;">Edit Profile</button>
+          </div>
+        </div>
+        <div class="profile-stats" id="profile-stats"></div>
+        <div style="height:24px;"></div>
+        <div class="settings-section">
+          <div class="settings-title">Account</div>
+          <div class="settings-item" onclick="toast('Email settings coming soon','info')">
+            <span class="si-icon">📧</span>
+            <div class="si-text"><div class="si-label">Email</div><div class="si-sub" id="profile-email-display">—</div></div>
+            <span class="si-arrow">›</span>
+          </div>
+          <div class="settings-item" onclick="toast('Password change coming soon','info')">
+            <span class="si-icon">🔐</span>
+            <div class="si-text"><div class="si-label">Change Password</div><div class="si-sub">Update your password</div></div>
+            <span class="si-arrow">›</span>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-title">Preferences</div>
+          <div class="settings-item" onclick="toast('Notifications settings coming soon','info')">
+            <span class="si-icon">🔔</span>
+            <div class="si-text"><div class="si-label">Notifications</div><div class="si-sub">Manage alerts and pings</div></div>
+            <span class="si-arrow">›</span>
+          </div>
+          <div class="settings-item" onclick="toast('Appearance settings coming soon','info')">
+            <span class="si-icon">🎨</span>
+            <div class="si-text"><div class="si-label">Appearance</div><div class="si-sub">Theme and display options</div></div>
+            <span class="si-arrow">›</span>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-title">Danger Zone</div>
+          <div class="settings-item" onclick="logout()" style="border-color:rgba(248,113,113,.2);">
+            <span class="si-icon">🚪</span>
+            <div class="si-text"><div class="si-label" style="color:#f87171;">Log Out</div><div class="si-sub">Sign out of your account</div></div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
-
 </div>
 
-<img src="Fortized Knight.png" class="knight">
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-create-bastion">
+  <div class="modal">
+    <div class="modal-bar"></div>
+    <div class="modal-body">
+      <div class="modal-title">Create a Bastion</div>
+      <div class="modal-sub">Build your own community fortress.</div>
+      <div class="modal-error" id="create-error"></div>
+      <input class="modal-input" id="bastion-name-input" placeholder="Bastion name" maxlength="32">
+      <input class="modal-input" id="bastion-desc-input" placeholder="Short description (optional)" maxlength="80">
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+        <span style="font-size:12px;color:var(--muted);width:100%;">Pick an icon:</span>
+        <div id="bastion-emoji-picker" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeModal('modal-create-bastion')">Cancel</button>
+        <button class="btn-accent" onclick="createBastion()">Create</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-new-dm">
+  <div class="modal">
+    <div class="modal-bar"></div>
+    <div class="modal-body">
+      <div class="modal-title">New Direct Message</div>
+      <div class="modal-sub">Start a conversation with another user.</div>
+      <div class="modal-error" id="dm-error"></div>
+      <input class="modal-input" id="dm-username-input" placeholder="Enter username">
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeModal('modal-new-dm')">Cancel</button>
+        <button class="btn-accent" onclick="startDM()">Open DM</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-buy-confirm">
+  <div class="modal">
+    <div class="modal-bar"></div>
+    <div class="modal-body">
+      <div class="modal-title" id="buy-confirm-title">Activate Radiance?</div>
+      <div class="modal-sub" id="buy-confirm-sub">This will deduct Onyx from your balance.</div>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeModal('modal-buy-confirm')">Cancel</button>
+        <button class="btn-accent" onclick="confirmBuy()">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
 <script>
-let onyx=25;
+// ── STATE ────────────────────────────────────────────
+let currentUser = null;
+let currentView = 'home';
+let currentDM = null;
+let currentBastion = null;
+let currentChannel = null;
+let pendingBuy = null;
 
-function show(id){
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+const EMOJIS = ['🏰','⚔️','🛡','🏹','🗡️','🔥','⚡','🌌','🎮','🎯','💀','🐉','🌙','🌟','🎪'];
+
+// ── INIT ─────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const username = localStorage.getItem('fortized_current_user');
+  if(!username){ window.location.href='login.html'; return; }
+  const users = JSON.parse(localStorage.getItem('fortized_users')) || [];
+  currentUser = users.find(u => u.username === username);
+  if(!currentUser){ window.location.href='login.html'; return; }
+  // Ensure fields exist
+  if(!Array.isArray(currentUser.bastions)) currentUser.bastions = [];
+  if(!Array.isArray(currentUser.friends)) currentUser.friends = [];
+  if(!Array.isArray(currentUser.dms)) currentUser.dms = [];
+  if(typeof currentUser.onyx !== 'number') currentUser.onyx = 5;
+  if(!currentUser.lastDaily) currentUser.lastDaily = null;
+  saveUser();
+  buildUI();
+  navigate('home');
+});
+
+// ── SAVE ─────────────────────────────────────────────
+function saveUser(){
+  const users = JSON.parse(localStorage.getItem('fortized_users')) || [];
+  const idx = users.findIndex(u => u.username === currentUser.username);
+  if(idx > -1){ users[idx] = currentUser; localStorage.setItem('fortized_users', JSON.stringify(users)); }
 }
 
-function buy(cost){
-  if(onyx>=cost){
-    onyx-=cost;
-    document.getElementById("balance").textContent=onyx;
-    document.getElementById("onyxCount").textContent=onyx;
-    alert("Radiance Activated!");
-  }else{
-    alert("Earn more Onyx.");
+// ── BUILD UI ─────────────────────────────────────────
+function buildUI(){
+  // Userbar
+  const ua = document.getElementById('userbar-avatar');
+  if(currentUser.pfp){ ua.innerHTML = `<img src="${currentUser.pfp}"><div class="status-ring"></div>`; }
+  else { ua.innerHTML = `<span>${(currentUser.username||'?')[0].toUpperCase()}</span><div class="status-ring"></div>`; }
+  document.getElementById('userbar-name').textContent = currentUser.username;
+  updateOnyxDisplay();
+  buildRailBastions();
+  buildDMList();
+  buildDiscoverGrid();
+  buildEmojiPicker();
+  renderHomeLanding();
+  updateDailyBtn();
+  buildProfileView();
+}
+
+function updateOnyxDisplay(){
+  document.getElementById('topbar-onyx').textContent = currentUser.onyx;
+  document.getElementById('atelier-balance').textContent = currentUser.onyx;
+}
+
+// ── BASTION RAIL ─────────────────────────────────────
+function buildRailBastions(){
+  const container = document.getElementById('rail-bastions');
+  container.innerHTML = '';
+  currentUser.bastions.forEach((b, i) => {
+    const el = document.createElement('div');
+    el.className = 'rail-bastion' + (currentBastion === i ? ' active' : '');
+    el.id = 'rail-bastion-' + i;
+    el.setAttribute('data-tip', b.name);
+    el.textContent = b.icon || '🏰';
+    el.onclick = () => openBastion(i);
+    container.appendChild(el);
+  });
+}
+
+// ── NAVIGATE ─────────────────────────────────────────
+function navigate(view){
+  // Hide all views
+  document.querySelectorAll('.view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
+  // Rail active state
+  document.querySelectorAll('.rail-btn').forEach(b => b.classList.remove('active'));
+  const railBtn = document.getElementById('rail-' + view);
+  if(railBtn) railBtn.classList.add('active');
+
+  currentView = view;
+
+  if(view === 'home'){
+    showView('view-home');
+    setSidebar('home');
+    setTopbar('🏠', 'Home', 'Your direct messages and friends');
+  } else if(view === 'discover'){
+    showView('view-discover');
+    setSidebar('discover');
+    setTopbar('🧭', 'Discover', 'Find and join public Bastions');
+  } else if(view === 'atelier'){
+    showView('view-atelier');
+    setSidebar('atelier');
+    setTopbar('💎', 'Atelier', 'Spend your Onyx on Radiance and more');
+    updateOnyxDisplay();
+  } else if(view === 'profile'){
+    showView('view-profile');
+    setSidebar('profile');
+    setTopbar('⚙️', 'Profile & Settings', '');
+    buildProfileView();
   }
 }
-</script>
 
+function showView(id){
+  const el = document.getElementById(id);
+  if(el){ el.style.display = 'flex'; el.classList.add('active'); }
+}
+
+function setTopbar(icon, title, desc){
+  document.getElementById('topbar-title').innerHTML = `<span class="ch-icon">${icon}</span><span>${title}</span>`;
+  document.getElementById('topbar-desc').textContent = desc;
+}
+
+// ── SIDEBAR CONTEXT ───────────────────────────────────
+function setSidebar(ctx){
+  const scroll = document.getElementById('sidebar-scroll');
+  const title = document.getElementById('sidebar-title');
+  const actions = document.getElementById('sidebar-header-actions');
+  scroll.innerHTML = '';
+  actions.innerHTML = '';
+
+  if(ctx === 'home'){
+    title.textContent = 'Fortized';
+    actions.innerHTML = `<button onclick="navigate('discover')" title="Discover">🧭</button>`;
+    // Nav items
+    const items = [
+      {icon:'🏠', label:'Home', action:()=>renderHomeLanding()},
+      {icon:'👥', label:'Friends', action:()=>renderFriends()},
+    ];
+    items.forEach(item => {
+      const el = createSidebarItem(item.icon, item.label);
+      el.onclick = item.action;
+      scroll.appendChild(el);
+    });
+    // DM section label
+    const label = document.createElement('div');
+    label.className = 'sidebar-section-label';
+    label.innerHTML = `<span>Direct Messages</span><button onclick="openNewDM()" title="New DM">+</button>`;
+    scroll.appendChild(label);
+    buildDMSidebarItems(scroll);
+  } else if(ctx === 'discover'){
+    title.textContent = 'Discover';
+  } else if(ctx === 'atelier'){
+    title.textContent = 'Atelier';
+    const label = document.createElement('div');
+    label.className = 'sidebar-section-label';
+    label.innerHTML = '<span>Store</span>';
+    scroll.appendChild(label);
+    [{icon:'✨',label:'Radiance'},{icon:'💎',label:'Onyx'},{icon:'🎨',label:'Cosmetics'}].forEach(item => {
+      const el = createSidebarItem(item.icon, item.label);
+      scroll.appendChild(el);
+    });
+  } else if(ctx === 'profile'){
+    title.textContent = 'Settings';
+    [{icon:'👤',label:'My Profile'},{icon:'🔒',label:'Privacy'},{icon:'🔔',label:'Notifications'},{icon:'🎨',label:'Appearance'}].forEach(item => {
+      const el = createSidebarItem(item.icon, item.label);
+      scroll.appendChild(el);
+    });
+  } else if(ctx === 'bastion' && currentBastion !== null){
+    const b = currentUser.bastions[currentBastion];
+    title.textContent = b.name;
+    actions.innerHTML = `<button onclick="toast('Bastion settings coming soon','info')" title="Settings">⚙️</button>`;
+    // Channels
+    const label = document.createElement('div');
+    label.className = 'sidebar-section-label';
+    label.innerHTML = `<span>Text Channels</span><button onclick="addChannel(${currentBastion})" title="Add Channel">+</button>`;
+    scroll.appendChild(label);
+    (b.channels || []).forEach((ch, ci) => {
+      const el = document.createElement('div');
+      el.className = 'channel-item' + (currentChannel === ci ? ' active' : '');
+      el.innerHTML = `<span class="ch-icon">#</span><span class="ch-name">${ch.name}</span>`;
+      el.onclick = () => openChannel(currentBastion, ci);
+      scroll.appendChild(el);
+    });
+    const voiceLabel = document.createElement('div');
+    voiceLabel.className = 'sidebar-section-label';
+    voiceLabel.innerHTML = `<span>Voice Channels</span>`;
+    scroll.appendChild(voiceLabel);
+    const vcEl = document.createElement('div');
+    vcEl.className = 'channel-item';
+    vcEl.innerHTML = `<span class="ch-icon">🔊</span><span class="ch-name">General Voice</span>`;
+    vcEl.onclick = () => toast('Voice channels coming soon','info');
+    scroll.appendChild(vcEl);
+  }
+}
+
+function createSidebarItem(icon, label, badge){
+  const el = document.createElement('div');
+  el.className = 'sidebar-item';
+  el.innerHTML = `<div class="item-icon"><span>${icon}</span></div><span class="item-name">${label}</span>${badge ? `<span class="item-badge">${badge}</span>` : ''}`;
+  return el;
+}
+
+function buildDMSidebarItems(container){
+  if(!currentUser.dms || currentUser.dms.length === 0){
+    const empty = document.createElement('div');
+    empty.style.cssText = 'padding:12px 16px;font-size:12.5px;color:var(--muted);';
+    empty.textContent = 'No DMs yet. Start one!';
+    container.appendChild(empty);
+    return;
+  }
+  currentUser.dms.forEach((dm, i) => {
+    const el = document.createElement('div');
+    el.className = 'friend-item' + (currentDM === i ? ' active' : '');
+    el.innerHTML = `
+      <div class="friend-avatar"><span>${(dm.with||'?')[0].toUpperCase()}</span><div class="f-status offline"></div></div>
+      <div class="friend-info">
+        <div class="friend-name">${dm.with}</div>
+        <div class="friend-status">${dm.messages && dm.messages.length ? dm.messages[dm.messages.length-1].text.slice(0,24)+'…' : 'No messages yet'}</div>
+      </div>
+    `;
+    el.onclick = () => openDMChat(i);
+    container.appendChild(el);
+  });
+}
+
+// ── HOME LANDING ──────────────────────────────────────
+function renderHomeLanding(){
+  const area = document.getElementById('home-main-area');
+  const hasRadiance = currentUser.radianceUntil && new Date(currentUser.radianceUntil) > new Date();
+  area.innerHTML = `
+    <div class="home-main" style="overflow-y:auto;">
+      <div class="home-hero">
+        <div class="home-hero-avatar">${currentUser.pfp ? `<img src="${currentUser.pfp}">` : `<span style="font-size:28px;">${currentUser.username[0].toUpperCase()}</span>`}</div>
+        <div class="home-hero-text">
+          <h2>Hey, ${currentUser.username}!</h2>
+          <p>Welcome back to the Fortress.</p>
+          ${hasRadiance ? `<div class="radiance-badge">✨ Radiance Active — expires ${new Date(currentUser.radianceUntil).toLocaleDateString()}</div>` : ''}
+        </div>
+      </div>
+      <div class="home-cards">
+        <div class="home-card" onclick="renderFriends()">
+          <div class="card-count">${currentUser.friends.length}</div>
+          <h4>Friends</h4>
+          <p>View and manage your friends list</p>
+        </div>
+        <div class="home-card" onclick="openNewDM()">
+          <div class="card-count">${currentUser.dms.length}</div>
+          <h4>Messages</h4>
+          <p>Direct messages and conversations</p>
+        </div>
+        <div class="home-card" onclick="navigate('atelier')">
+          <div class="card-count" style="color:var(--accent);">${currentUser.onyx}</div>
+          <h4>Onyx</h4>
+          <p>Your current Onyx balance</p>
+        </div>
+        <div class="home-card" onclick="navigate('discover')">
+          <div class="card-count">${currentUser.bastions.length}</div>
+          <h4>Bastions</h4>
+          <p>Your fortress communities</p>
+        </div>
+      </div>
+    </div>
+  `;
+  updateDMLeftPanel();
+}
+
+function updateDMLeftPanel(){
+  const dmList = document.getElementById('dm-list');
+  if(!dmList) return;
+  dmList.innerHTML = '';
+  buildDMSidebarItems(dmList);
+}
+
+function renderFriends(){
+  const area = document.getElementById('home-main-area');
+  area.innerHTML = `
+    <div class="home-main" style="overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;">Friends</div>
+        <button class="btn-accent" onclick="promptAddFriend()" style="font-size:13px;padding:8px 18px;">+ Add Friend</button>
+      </div>
+      ${currentUser.friends.length === 0 ? `
+        <div class="empty-state" style="padding:80px 0;">
+          <div class="empty-icon">👥</div>
+          <h3>No friends yet</h3>
+          <p>Add friends by username to start chatting and playing together.</p>
+          <button class="btn-accent" onclick="promptAddFriend()">Add a Friend</button>
+        </div>` : currentUser.friends.map((f,i) => `
+        <div class="friend-item" style="padding:12px 14px;background:var(--panel);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;">
+          <div class="friend-avatar" style="width:38px;height:38px;font-size:16px;"><span>${f[0].toUpperCase()}</span><div class="f-status offline"></div></div>
+          <div class="friend-info"><div class="friend-name">${f}</div><div class="friend-status">Offline</div></div>
+          <button class="btn-ghost" onclick="startDMWith('${f}')" style="font-size:12px;padding:6px 14px;">Message</button>
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+function promptAddFriend(){
+  const name = prompt('Enter username to add:');
+  if(!name || !name.trim()) return;
+  const n = name.trim();
+  if(n === currentUser.username){ toast('You can\'t add yourself!','error'); return; }
+  if(currentUser.friends.includes(n)){ toast('Already friends!','info'); return; }
+  const users = JSON.parse(localStorage.getItem('fortized_users')) || [];
+  if(!users.find(u => u.username === n)){ toast('User not found','error'); return; }
+  currentUser.friends.push(n);
+  saveUser();
+  toast(`${n} added as friend!`,'success');
+  renderFriends();
+}
+
+// ── DM CHAT ───────────────────────────────────────────
+function buildDMList(){
+  updateDMLeftPanel();
+}
+
+function openNewDM(){
+  document.getElementById('dm-username-input').value = '';
+  document.getElementById('dm-error').textContent = '';
+  openModal('modal-new-dm');
+}
+
+function startDM(){
+  const name = document.getElementById('dm-username-input').value.trim();
+  if(!name){ document.getElementById('dm-error').textContent = 'Enter a username.'; return; }
+  if(name === currentUser.username){ document.getElementById('dm-error').textContent = 'You can\'t DM yourself!'; return; }
+  const users = JSON.parse(localStorage.getItem('fortized_users')) || [];
+  if(!users.find(u => u.username === name)){ document.getElementById('dm-error').textContent = 'User not found.'; return; }
+  closeModal('modal-new-dm');
+  startDMWith(name);
+}
+
+function startDMWith(name){
+  navigate('home');
+  let idx = currentUser.dms.findIndex(d => d.with === name);
+  if(idx === -1){
+    currentUser.dms.push({with: name, messages: []});
+    saveUser();
+    idx = currentUser.dms.length - 1;
+  }
+  openDMChat(idx);
+  updateDMLeftPanel();
+}
+
+function openDMChat(idx){
+  currentDM = idx;
+  const dm = currentUser.dms[idx];
+  const area = document.getElementById('home-main-area');
+  area.innerHTML = `
+    <div class="chat-view">
+      <div class="chat-messages" id="chat-msgs">
+        <div class="chat-welcome">
+          <div class="welcome-avatar"><span style="font-size:24px;">${dm.with[0].toUpperCase()}</span></div>
+          <h3>${dm.with}</h3>
+          <p>This is the beginning of your direct message history with <strong>${dm.with}</strong>.</p>
+        </div>
+        ${renderMessages(dm.messages)}
+      </div>
+      <div class="chat-input-wrap">
+        <div class="chat-input-box">
+          <div class="chat-input-actions">
+            <button title="Attach" onclick="toast('File upload coming soon','info')">📎</button>
+          </div>
+          <textarea id="dm-msg-input" placeholder="Message ${dm.with}" rows="1" onkeydown="dmKeydown(event,${idx})" oninput="autoResize(this)"></textarea>
+          <button class="chat-send" onclick="sendDM(${idx})">➤</button>
+        </div>
+      </div>
+    </div>
+  `;
+  scrollChatToBottom();
+  // Update sidebar highlight
+  document.querySelectorAll('#dm-list .friend-item').forEach((el,i) => el.classList.toggle('active', i === idx));
+}
+
+function renderMessages(msgs){
+  if(!msgs || msgs.length === 0) return '';
+  return msgs.map((m, i) => {
+    const isOwn = m.from === currentUser.username;
+    const prev = msgs[i-1];
+    const isCont = prev && prev.from === m.from;
+    return `
+      <div class="msg-group ${isOwn?'own':''} ${isCont?'msg-cont':''}">
+        <div class="msg-avatar">${isOwn ? (currentUser.pfp ? `<img src="${currentUser.pfp}">` : `<span>${currentUser.username[0].toUpperCase()}</span>`) : `<span>${m.from[0].toUpperCase()}</span>`}</div>
+        <div class="msg-content">
+          <div class="msg-meta"><span class="msg-author">${m.from}</span><span class="msg-time">${m.time||''}</span></div>
+          <div class="msg-bubble">${escapeHTML(m.text)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function sendDM(idx){
+  const input = document.getElementById('dm-msg-input');
+  const text = input.value.trim();
+  if(!text) return;
+  const now = new Date();
+  const time = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  if(!currentUser.dms[idx].messages) currentUser.dms[idx].messages = [];
+  currentUser.dms[idx].messages.push({from: currentUser.username, text, time});
+  saveUser();
+  input.value = '';
+  input.style.height = '';
+  openDMChat(idx);
+}
+
+function dmKeydown(e, idx){
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendDM(idx); }
+}
+
+function autoResize(el){
+  el.style.height = '';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function scrollChatToBottom(){
+  setTimeout(() => {
+    const msgs = document.getElementById('chat-msgs');
+    if(msgs) msgs.scrollTop = msgs.scrollHeight;
+  }, 50);
+}
+
+// ── BASTIONS ──────────────────────────────────────────
+function openBastion(idx){
+  currentBastion = idx;
+  currentChannel = null;
+  const b = currentUser.bastions[idx];
+  // Ensure default channel
+  if(!b.channels || b.channels.length === 0){
+    b.channels = [{name:'general',messages:[]}];
+    saveUser();
+  }
+  // Rail
+  document.querySelectorAll('.rail-bastion').forEach((el,i) => el.classList.toggle('active', i === idx));
+  document.querySelectorAll('.rail-btn').forEach(b => b.classList.remove('active'));
+  // Sidebar
+  setSidebar('bastion');
+  setTopbar('🏰', b.name, b.desc || 'Welcome to ' + b.name);
+  // Open first channel
+  openChannel(idx, 0);
+  // Show bastion view
+  document.querySelectorAll('.view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
+  showView('view-bastion');
+}
+
+function openChannel(bastionIdx, chIdx){
+  currentBastion = bastionIdx;
+  currentChannel = chIdx;
+  const b = currentUser.bastions[bastionIdx];
+  const ch = b.channels[chIdx];
+  setTopbar('#', ch.name, `${b.name} — #${ch.name}`);
+  // Update channel highlight in sidebar
+  document.querySelectorAll('.channel-item').forEach((el,i) => el.classList.toggle('active', i === chIdx));
+  const main = document.getElementById('bastion-main');
+  main.innerHTML = `
+    <div class="chat-view">
+      <div class="chat-messages" id="bastion-msgs">
+        <div class="chat-welcome">
+          <div class="welcome-avatar" style="border-radius:12px;">#</div>
+          <h3>#${ch.name}</h3>
+          <p>This is the beginning of the <strong>#${ch.name}</strong> channel. Say hello!</p>
+        </div>
+        ${renderMessages(ch.messages || [])}
+      </div>
+      <div class="chat-input-wrap">
+        <div class="chat-input-box">
+          <div class="chat-input-actions">
+            <button onclick="toast('File upload coming soon','info')">📎</button>
+          </div>
+          <textarea id="bastion-msg-input" placeholder="Message #${ch.name}" rows="1" onkeydown="bastionKeydown(event,${bastionIdx},${chIdx})" oninput="autoResize(this)"></textarea>
+          <button class="chat-send" onclick="sendBastionMsg(${bastionIdx},${chIdx})">➤</button>
+        </div>
+      </div>
+    </div>
+  `;
+  const msgs = document.getElementById('bastion-msgs');
+  if(msgs) setTimeout(() => { msgs.scrollTop = msgs.scrollHeight; }, 50);
+}
+
+function sendBastionMsg(bIdx, cIdx){
+  const input = document.getElementById('bastion-msg-input');
+  const text = input.value.trim();
+  if(!text) return;
+  const now = new Date();
+  const time = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  if(!currentUser.bastions[bIdx].channels[cIdx].messages) currentUser.bastions[bIdx].channels[cIdx].messages = [];
+  currentUser.bastions[bIdx].channels[cIdx].messages.push({from: currentUser.username, text, time});
+  saveUser();
+  input.value = '';
+  input.style.height = '';
+  openChannel(bIdx, cIdx);
+}
+
+function bastionKeydown(e, bIdx, cIdx){
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendBastionMsg(bIdx, cIdx); }
+}
+
+function addChannel(bIdx){
+  const name = prompt('Channel name:');
+  if(!name || !name.trim()) return;
+  const clean = name.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  if(!clean){ toast('Invalid channel name','error'); return; }
+  if(currentUser.bastions[bIdx].channels.find(c => c.name === clean)){ toast('Channel already exists','error'); return; }
+  currentUser.bastions[bIdx].channels.push({name: clean, messages: []});
+  saveUser();
+  setSidebar('bastion');
+  toast('#'+clean+' created!','success');
+}
+
+// ── CREATE BASTION ────────────────────────────────────
+function buildEmojiPicker(){
+  const picker = document.getElementById('bastion-emoji-picker');
+  if(!picker) return;
+  picker.innerHTML = '';
+  EMOJIS.forEach(e => {
+    const btn = document.createElement('div');
+    btn.textContent = e;
+    btn.style.cssText = 'cursor:pointer;font-size:22px;padding:4px;border-radius:6px;transition:background .12s;';
+    btn.onclick = () => {
+      picker.querySelectorAll('div').forEach(d => d.style.background = '');
+      btn.style.background = 'rgba(255,249,62,.15)';
+      picker.dataset.selected = e;
+    };
+    picker.appendChild(btn);
+  });
+  picker.dataset.selected = EMOJIS[0];
+  picker.querySelector('div').style.background = 'rgba(255,249,62,.15)';
+}
+
+function openCreateBastion(){
+  document.getElementById('bastion-name-input').value = '';
+  document.getElementById('bastion-desc-input').value = '';
+  document.getElementById('create-error').textContent = '';
+  buildEmojiPicker();
+  openModal('modal-create-bastion');
+}
+
+function createBastion(){
+  const name = document.getElementById('bastion-name-input').value.trim();
+  const desc = document.getElementById('bastion-desc-input').value.trim();
+  const icon = document.getElementById('bastion-emoji-picker').dataset.selected || '🏰';
+  if(!name){ document.getElementById('create-error').textContent = 'Name is required.'; return; }
+  const bastion = {
+    name, desc, icon,
+    channels:[{name:'general',messages:[]},{name:'announcements',messages:[]}],
+    members:[currentUser.username]
+  };
+  currentUser.bastions.push(bastion);
+  saveUser();
+  closeModal('modal-create-bastion');
+  buildRailBastions();
+  toast(name+' created!','success');
+  openBastion(currentUser.bastions.length - 1);
+}
+
+// ── DISCOVER ──────────────────────────────────────────
+const PUBLIC_BASTIONS = [
+  {icon:'⚔️',name:'Warfront Elite',desc:'Competitive FPS players and strategy enthusiasts.',members:1842,online:234},
+  {icon:'🐉',name:'Dragon Realm',desc:'Fantasy RPG and tabletop gaming community.',members:932,online:87},
+  {icon:'🎮',name:'Casual Crew',desc:'Laid-back gamers who just want to have fun.',members:3201,online:418},
+  {icon:'🌌',name:'Void Runners',desc:'Sci-fi games, space sims, and futurism.',members:671,online:55},
+  {icon:'🎯',name:'Sniper Guild',desc:'Precision shooters and competitive ranked players.',members:2156,online:310},
+  {icon:'🔥',name:'Blaze Bastions',desc:'The hottest new Bastion on the platform.',members:489,online:102},
+];
+
+function buildDiscoverGrid(){
+  const grid = document.getElementById('bastion-grid');
+  if(!grid) return;
+  renderDiscoverGrid(PUBLIC_BASTIONS);
+}
+
+function filterBastions(){
+  const q = document.getElementById('discover-search-input').value.toLowerCase();
+  const filtered = q ? PUBLIC_BASTIONS.filter(b => b.name.toLowerCase().includes(q) || b.desc.toLowerCase().includes(q)) : PUBLIC_BASTIONS;
+  renderDiscoverGrid(filtered);
+}
+
+function renderDiscoverGrid(bastions){
+  const grid = document.getElementById('bastion-grid');
+  if(!grid) return;
+  if(bastions.length === 0){
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">No bastions found.</div>';
+    return;
+  }
+  grid.innerHTML = bastions.map(b => `
+    <div class="bastion-card" onclick="toast('Join feature coming soon','info')">
+      <div class="bastion-banner">${b.icon}</div>
+      <div class="bastion-body">
+        <div class="bastion-meta">
+          <div class="bastion-icon">${b.icon}</div>
+          <div class="bastion-name">${b.name}</div>
+        </div>
+        <div class="bastion-desc">${b.desc}</div>
+        <div class="bastion-stats">
+          <span>👥 ${b.members.toLocaleString()}</span>
+          <span style="color:#3ecf6e;">● ${b.online} online</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── ATELIER ───────────────────────────────────────────
+function updateDailyBtn(){
+  const btn = document.getElementById('daily-btn');
+  const status = document.getElementById('daily-status');
+  if(!btn || !status) return;
+  const today = new Date().toDateString();
+  if(currentUser.lastDaily === today){
+    btn.classList.add('claimed');
+    status.textContent = 'Claimed today';
+  } else {
+    btn.classList.remove('claimed');
+    status.textContent = 'Claim now';
+  }
+}
+
+function claimDaily(){
+  const today = new Date().toDateString();
+  if(currentUser.lastDaily === today){ toast('Already claimed today!','info'); return; }
+  currentUser.onyx += 5;
+  currentUser.lastDaily = today;
+  saveUser();
+  updateOnyxDisplay();
+  updateDailyBtn();
+  toast('+5 Onyx claimed!','success');
+}
+
+function buyRadiance(cost, label){
+  pendingBuy = {cost, label};
+  document.getElementById('buy-confirm-title').textContent = `Activate Radiance — ${label}?`;
+  document.getElementById('buy-confirm-sub').textContent = `This will deduct ${cost} Onyx. You have ${currentUser.onyx} Onyx.`;
+  openModal('modal-buy-confirm');
+}
+
+function confirmBuy(){
+  if(!pendingBuy) return;
+  if(currentUser.onyx < pendingBuy.cost){ toast('Not enough Onyx!','error'); closeModal('modal-buy-confirm'); return; }
+  currentUser.onyx -= pendingBuy.cost;
+  // Set expiry
+  const days = pendingBuy.label.includes('30') ? 30 : pendingBuy.label.includes('7') ? 7 : 1;
+  const exp = new Date();
+  exp.setDate(exp.getDate() + days);
+  currentUser.radianceUntil = exp.toISOString();
+  saveUser();
+  updateOnyxDisplay();
+  closeModal('modal-buy-confirm');
+  toast(`✨ Radiance activated for ${pendingBuy.label}!`,'success');
+  pendingBuy = null;
+  renderHomeLanding();
+}
+
+// ── PROFILE VIEW ──────────────────────────────────────
+function buildProfileView(){
+  const avatarBig = document.getElementById('profile-avatar-big');
+  if(avatarBig){
+    avatarBig.innerHTML = currentUser.pfp ? `<img src="${currentUser.pfp}">` : `<span style="font-size:32px;">${currentUser.username[0].toUpperCase()}</span>`;
+  }
+  const nameBig = document.getElementById('profile-name-big');
+  if(nameBig) nameBig.textContent = currentUser.username;
+  const handle = document.getElementById('profile-handle');
+  if(handle) handle.textContent = '@' + currentUser.username;
+  const emailDisp = document.getElementById('profile-email-display');
+  if(emailDisp) emailDisp.textContent = currentUser.email || '—';
+  const stats = document.getElementById('profile-stats');
+  if(stats){
+    const hasRadiance = currentUser.radianceUntil && new Date(currentUser.radianceUntil) > new Date();
+    stats.innerHTML = `
+      <div class="profile-stat"><div class="profile-stat-val">${currentUser.onyx}</div><div class="profile-stat-key">Onyx</div></div>
+      <div class="profile-stat"><div class="profile-stat-val">${currentUser.friends.length}</div><div class="profile-stat-key">Friends</div></div>
+      <div class="profile-stat"><div class="profile-stat-val">${currentUser.bastions.length}</div><div class="profile-stat-key">Bastions</div></div>
+      <div class="profile-stat"><div class="profile-stat-val" style="font-size:16px;">${hasRadiance ? '✨' : '—'}</div><div class="profile-stat-key">Radiance</div></div>
+    `;
+  }
+}
+
+// ── UTILS ─────────────────────────────────────────────
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+let toastTimer;
+function toast(msg, type='info'){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function escapeHTML(str){
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function logout(){
+  localStorage.removeItem('fortized_current_user');
+  window.location.href = 'login.html';
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if(e.target === overlay) overlay.classList.remove('open');
+  });
+});
+</script>
 </body>
 </html>
