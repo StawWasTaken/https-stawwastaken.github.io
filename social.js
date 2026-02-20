@@ -1,31 +1,3 @@
-/**
- * FortizedSocial — Firebase Realtime Database Backend
- * =====================================================
- * DROP-IN REPLACEMENT for the localStorage version.
- * All existing app.html calls work unchanged.
- *
- * SETUP (one-time, ~5 minutes):
- *   1. Go to https://console.firebase.google.com
- *   2. Create a new project (free Spark plan)
- *   3. Add a Web App — copy your firebaseConfig object
- *   4. Go to "Realtime Database" → Create database → Start in TEST mode
- *   5. Paste your firebaseConfig values below (replace the placeholders)
- *   6. In app.html, replace the inline FortizedSocial script block with:
- *        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
- *        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
- *        <script src="FortizedSocial-firebase.js"></script>
- *      (put these BEFORE the rest of your app.html <script> block)
- *
- * HOW IT WORKS:
- *   - Every user, message, DM, bastion, notification is stored in Firebase
- *   - Firebase's onValue() listeners give real-time cross-user updates
- *   - Passwords are stored as-is (same as original) — add Firebase Auth later for prod
- *   - LocalStorage is used ONLY for session (who is logged in right now)
- */
-
-// ─────────────────────────────────────────────────────────────
-// 🔧 PASTE YOUR FIREBASE CONFIG HERE
-// ─────────────────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyDeKw90592XdSKSXr1mefodYhca53AVP9M",
   authDomain:        "fortized-5ffcf.firebaseapp.com",
