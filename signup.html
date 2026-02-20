@@ -234,41 +234,63 @@ body::before{
 
   </div>
 </div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="FortizedSocial-firebase.js"></script>
 <script>
 const signupBtn = document.getElementById("signupBtn");
-const emailInput = document.getElementById("email");
+const emailInput    = document.getElementById("email");
 const usernameInput = document.getElementById("username");
 const passwordInput = document.getElementById("password");
 const termsCheckbox = document.getElementById("terms");
-const pfpInput = document.getElementById("pfp");
-const errorDiv = document.getElementById("error");
-const userErrorDiv = document.getElementById("userError");
-const pfpName = document.getElementById("pfpName");
+const pfpInput      = document.getElementById("pfp");
+const errorDiv      = document.getElementById("error");
+const userErrorDiv  = document.getElementById("userError");
+const pfpName       = document.getElementById("pfpName");
 
 pfpInput.addEventListener("change", () => {
-  if(pfpInput.files[0]) pfpName.textContent = "✓ " + pfpInput.files[0].name;
+  if (pfpInput.files[0]) pfpName.textContent = "✓ " + pfpInput.files[0].name;
 });
 
-signupBtn.addEventListener("click",()=>{
-  const email = emailInput.value.trim();
+signupBtn.addEventListener("click", async () => {
+  const email    = emailInput.value.trim();
   const username = usernameInput.value.trim();
   const password = passwordInput.value;
-  const terms = termsCheckbox.checked;
-  errorDiv.textContent=""; userErrorDiv.textContent="";
-  if(!email || !username || !password){ errorDiv.textContent="All fields are required."; return; }
-  if(!terms){ errorDiv.textContent="You must accept the terms to continue."; return; }
-  let users = JSON.parse(localStorage.getItem("fortized_users")) || [];
-  if(users.find(u=>u.username.toLowerCase()===username.toLowerCase())){ userErrorDiv.textContent="Username already taken."; return; }
+  const terms    = termsCheckbox.checked;
+  errorDiv.textContent = ""; userErrorDiv.textContent = "";
+
+  if (!email || !username || !password) { errorDiv.textContent = "All fields are required."; return; }
+  if (!terms) { errorDiv.textContent = "You must accept the terms to continue."; return; }
+
+  signupBtn.textContent = "Creating…";
+  signupBtn.style.opacity = ".7";
+  signupBtn.style.pointerEvents = "none";
+
+  const result = await FortizedSocial.register(username, password, email);
+  if (!result.ok) {
+    userErrorDiv.textContent = result.msg;
+    signupBtn.textContent = "Create Account →";
+    signupBtn.style.opacity = ""; signupBtn.style.pointerEvents = "";
+    return;
+  }
+
+  // Handle optional profile picture
   const file = pfpInput.files[0];
-  const reader = new FileReader();
-  reader.onload = function(){
-    const newUser = { email, username, password, pfp: reader.result || null, onyx:5, radianceUntil:null, bastions:[], friends:[], dms:[], lastDaily:null };
-    users.push(newUser);
-    localStorage.setItem("fortized_users",JSON.stringify(users));
-    localStorage.setItem("fortized_current_user",username);
-    window.location.href="app.html";
-  };
-  if(file){ reader.readAsDataURL(file); } else { reader.onload(); }
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      await FortizedSocial.saveUserObject({ ...result.user, pfp: e.target.result });
+      FortizedSocial.setCurrentUsername ? FortizedSocial.getCurrentUsername() : null;
+      localStorage.setItem('ftz_current', username);
+      localStorage.setItem('fortized_current_user', username);
+      window.location.href = "app.html";
+    };
+    reader.readAsDataURL(file);
+  } else {
+    localStorage.setItem('ftz_current', username);
+    localStorage.setItem('fortized_current_user', username);
+    window.location.href = "app.html";
+  }
 });
 </script>
 </body>
