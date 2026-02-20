@@ -183,6 +183,9 @@ body::before{
 
   </div>
 </div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="FortizedSocial-firebase.js"></script>
 <script>
 const loginBtn = document.getElementById("loginBtn");
 const identifierInput = document.getElementById("identifier");
@@ -190,30 +193,31 @@ const passwordInput = document.getElementById("password");
 const errorDiv = document.getElementById("error");
 
 [identifierInput, passwordInput].forEach(el => {
-  el.addEventListener("keydown", e => { if(e.key === "Enter") login(); });
+  el.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
 });
-loginBtn.addEventListener("click", login);
+loginBtn.addEventListener("click", doLogin);
 
-function login(){
-  const id = identifierInput.value.trim();
+async function doLogin() {
+  const id   = identifierInput.value.trim();
   const pass = passwordInput.value;
   errorDiv.textContent = "";
-  if(!id || !pass){ errorDiv.textContent = "Please fill in all fields."; return; }
-  const users = JSON.parse(localStorage.getItem("fortized_users")) || [];
-  const user = users.find(u => (u.email === id || u.username === id) && u.password === pass);
-  if(!user){
-    errorDiv.textContent = "Invalid credentials. Please try again.";
-    const card = document.querySelector(".card");
-    card.classList.remove("shake");
-    void card.offsetWidth;
-    card.classList.add("shake");
-    return;
-  }
-  localStorage.setItem("fortized_current_user", user.username);
-  loginBtn.textContent = "✓ Entering...";
+  if (!id || !pass) { errorDiv.textContent = "Please fill in all fields."; return; }
+
+  loginBtn.textContent = "Entering…";
   loginBtn.style.opacity = ".7";
   loginBtn.style.pointerEvents = "none";
-  setTimeout(() => { window.location.href = "app.html"; }, 400);
+
+  const result = await FortizedSocial.login(id, pass);
+  if (!result.ok) {
+    errorDiv.textContent = result.msg;
+    loginBtn.textContent = "Enter the Fortress →";
+    loginBtn.style.opacity = "";
+    loginBtn.style.pointerEvents = "";
+    const card = document.querySelector(".card");
+    card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
+    return;
+  }
+  window.location.href = "app.html";
 }
 </script>
 </body>
