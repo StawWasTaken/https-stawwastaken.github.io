@@ -1,76 +1,125 @@
 /**
- * FortizedSocial — Self-contained social backend
- * Uses localStorage as the database, BroadcastChannel for real-time cross-tab sync.
- * No server required. All data is scoped per-user.
+ * FortizedSocial — Firebase Realtime Database Backend
+ * =====================================================
+ * DROP-IN REPLACEMENT for the localStorage version.
+ * All existing app.html calls work unchanged.
+ *
+ * SETUP (one-time, ~5 minutes):
+ *   1. Go to https://console.firebase.google.com
+ *   2. Create a new project (free Spark plan)
+ *   3. Add a Web App — copy your firebaseConfig object
+ *   4. Go to "Realtime Database" → Create database → Start in TEST mode
+ *   5. Paste your firebaseConfig values below (replace the placeholders)
+ *   6. In app.html, replace the inline FortizedSocial script block with:
+ *        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+ *        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+ *        <script src="FortizedSocial-firebase.js"></script>
+ *      (put these BEFORE the rest of your app.html <script> block)
+ *
+ * HOW IT WORKS:
+ *   - Every user, message, DM, bastion, notification is stored in Firebase
+ *   - Firebase's onValue() listeners give real-time cross-user updates
+ *   - Passwords are stored as-is (same as original) — add Firebase Auth later for prod
+ *   - LocalStorage is used ONLY for session (who is logged in right now)
  */
+
+// ─────────────────────────────────────────────────────────────
+// 🔧 PASTE YOUR FIREBASE CONFIG HERE
+// ─────────────────────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyDeKw90592XdSKSXr1mefodYhca53AVP9M",
+  authDomain:        "fortized-5ffcf.firebaseapp.com",
+  databaseURL:       "https://fortized-5ffcf-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "fortized-5ffcf",
+  storageBucket:     "fortized-5ffcf.firebasestorage.app",
+  messagingSenderId: "232126031951",
+  appId:             "1:232126031951:web:c66312d3175f137c25223a"
+};
+// ─────────────────────────────────────────────────────────────
+
 const FortizedSocial = (() => {
 
-  // ─── KEYS ────────────────────────────────────────────────────────────
-  const KEY_USERS      = 'ftz_users';
-  const KEY_STATUSES   = 'ftz_statuses';
-  const KEY_DMS        = 'ftz_dms';
-  const KEY_BAST_MSGS  = 'ftz_bmsgs';
-  const notifKey   = u => `ftz_notifs_${u}`;
-  const dmKey      = (a, b) => `ftz_dm_${[a,b].sort().join('__')}`;
+  // ── Firebase init ──────────────────────────────────────────
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  const db = firebase.database();
 
-  // ─── BROADCAST CHANNEL ────────────────────────────────────────────────
-  let bc = null;
-  try { bc = new BroadcastChannel('fortized'); } catch(e) {}
+  // ── DB path helpers ────────────────────────────────────────
+  const P = {
+    user:        u  => `users/${u}`,
+    status:      u  => `statuses/${u}`,
+    notifs:      u  => `notifications/${u}`,
+    dm:         (a, b) => `dms/${[a, b].sort().join('__')}`,
+    dmIndex:     u  => `dmIndex/${u}`,
+    bastionMsgs:(id, ch) => `bastionMsgs/${id}/${ch}`,
+    bastionMembers: id  => `bastionMembers/${id}`,
+    globalBastions:     `globalBastions`,
+    globalBastion: id   => `globalBastions/${id}`,
+    invites:            `invites`,
+    invite:      code   => `invites/${code}`,
+  };
 
-  function broadcast(type, data) {
-    try { bc?.postMessage({ type, data, ts: Date.now() }); } catch(e) {}
+  // ── Tiny promise wrappers ──────────────────────────────────
+  function dbGet(path) {
+    return db.ref(path).get().then(snap => snap.exists() ? snap.val() : null);
+  }
+  function dbSet(path, val) {
+    return db.ref(path).set(val);
+  }
+  function dbUpdate(path, val) {
+    return db.ref(path).update(val);
+  }
+  function dbPush(path, val) {
+    return db.ref(path).push(val);
+  }
+  function dbRemove(path) {
+    return db.ref(path).remove();
+  }
+  function dbTransaction(path, fn) {
+    return db.ref(path).transaction(fn);
   }
 
-  // ─── STORAGE HELPERS ─────────────────────────────────────────────────
-  function get(key, fallback = null) {
-    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch(e) { return fallback; }
+  // ── Session (stays local — just "who am I right now") ──────
+  function getCurrentUsername() {
+    return localStorage.getItem('ftz_current') ||
+           localStorage.getItem('fortized_current_user') || null;
   }
-  function set(key, val) {
-    try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+  function setCurrentUsername(u) {
+    localStorage.setItem('ftz_current', u);
+    localStorage.setItem('fortized_current_user', u);
   }
-
-  // ─── USER CRUD ────────────────────────────────────────────────────────
-  function getUsers() { return get(KEY_USERS, []); }
-  function saveUsers(users) { set(KEY_USERS, users); }
-
-  function getUserByName(username) {
-    return getUsers().find(u => u.username === username) || null;
+  function clearCurrentUsername() {
+    localStorage.removeItem('ftz_current');
+    localStorage.removeItem('fortized_current_user');
   }
 
-  function saveUserObject(user) {
-    const users = getUsers();
-    const idx = users.findIndex(u => u.username === user.username);
-    if (idx !== -1) users[idx] = { ...users[idx], ...user };
-    else users.push(user);
-    saveUsers(users);
+  // ── User CRUD ──────────────────────────────────────────────
+  async function getUsers() {
+    const snap = await db.ref('users').get();
+    if (!snap.exists()) return [];
+    return Object.values(snap.val());
   }
 
-  // Ensure user fields are initialized
-  function initUser(username) {
-    const users = getUsers();
-    const idx = users.findIndex(u => u.username === username);
-    if (idx === -1) return;
-    const u = users[idx];
-    if (!Array.isArray(u.friends)) u.friends = [];
-    if (!Array.isArray(u.friendRequestsSent)) u.friendRequestsSent = [];
-    if (!Array.isArray(u.friendRequestsReceived)) u.friendRequestsReceived = [];
-    if (!Array.isArray(u.bastions)) u.bastions = [];
-    if (!Array.isArray(u.notifications)) u.notifications = [];
-    if (typeof u.onyx !== 'number') u.onyx = 5;
-    if (!u.status) u.status = 'online';
-    if (!u.displayName) u.displayName = u.username;
-    users[idx] = u;
-    saveUsers(users);
-    return users[idx];
+  async function getUserByName(username) {
+    if (!username) return null;
+    return dbGet(P.user(username));
   }
 
-  // ─── AUTH ─────────────────────────────────────────────────────────────
-  function register(username, password, email = '') {
+  async function saveUserObject(user) {
+    if (!user?.username) return;
+    await dbUpdate(P.user(user.username), user);
+  }
+
+  // ── Auth ───────────────────────────────────────────────────
+  async function register(username, password, email = '') {
     username = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-    if (!username || username.length < 3) return { ok: false, msg: 'Username must be 3+ characters (a-z, 0-9, _).' };
-    if (!password || password.length < 6) return { ok: false, msg: 'Password must be 6+ characters.' };
-    const users = getUsers();
-    if (users.find(u => u.username === username)) return { ok: false, msg: 'Username already taken.' };
+    if (!username || username.length < 3)
+      return { ok: false, msg: 'Username must be 3+ characters (a-z, 0-9, _).' };
+    if (!password || password.length < 6)
+      return { ok: false, msg: 'Password must be 6+ characters.' };
+
+    const existing = await getUserByName(username);
+    if (existing) return { ok: false, msg: 'Username already taken.' };
+
     const user = {
       username, password, email,
       displayName: username,
@@ -86,319 +135,369 @@ const FortizedSocial = (() => {
       lastDaily: null,
       createdAt: new Date().toISOString()
     };
-    users.push(user);
-    saveUsers(users);
+    await dbSet(P.user(username), user);
     return { ok: true, user };
   }
 
-  function login(username, password) {
+  async function login(username, password) {
     username = username.trim().toLowerCase();
-    const user = getUserByName(username);
+    const user = await getUserByName(username);
     if (!user) return { ok: false, msg: 'User not found.' };
     if (user.password !== password) return { ok: false, msg: 'Wrong password.' };
-    localStorage.setItem('ftz_current', username);
-    setStatus(username, 'online');
+    setCurrentUsername(username);
+    await setStatus(username, 'online');
     return { ok: true, user };
   }
 
-  function logout(username) {
-    setStatus(username, 'offline');
+  async function logout(username) {
+    await setStatus(username, 'offline');
     stopPolling();
-    localStorage.removeItem('ftz_current');
+    clearCurrentUsername();
   }
 
-  function getCurrentUsername() {
-    return localStorage.getItem('ftz_current') || localStorage.getItem('fortized_current_user') || null;
+  // ── Status ─────────────────────────────────────────────────
+  async function getStatus(username) {
+    const val = await dbGet(P.status(username));
+    return val || 'offline';
   }
 
-  // ─── STATUS ───────────────────────────────────────────────────────────
-  function getStatus(username) {
-    const statuses = get(KEY_STATUSES, {});
-    return statuses[username] || 'offline';
-  }
-  function setStatus(username, status) {
-    const statuses = get(KEY_STATUSES, {});
-    statuses[username] = status;
-    set(KEY_STATUSES, statuses);
-    broadcast('status', { username, status });
+  async function setStatus(username, status) {
+    await dbSet(P.status(username), status);
+    // Also keep in user object for convenience
+    await dbUpdate(P.user(username), { status });
   }
 
-  // ─── NOTIFICATIONS ────────────────────────────────────────────────────
-  function getNotifications(username) {
-    // Read directly from user object (single source of truth)
-    const user = getUserByName(username);
-    return (user?.notifications || []).slice().reverse(); // newest first
+  // ── Notifications ──────────────────────────────────────────
+  async function getNotifications(username) {
+    const data = await dbGet(P.notifs(username));
+    if (!data) return [];
+    // Firebase objects → sorted array (newest first)
+    return Object.values(data).sort((a, b) =>
+      new Date(b.time) - new Date(a.time)
+    );
   }
 
-  function addNotification(toUsername, notif) {
-    const users = getUsers();
-    const idx = users.findIndex(u => u.username === toUsername);
-    if (idx === -1) return;
-    if (!Array.isArray(users[idx].notifications)) users[idx].notifications = [];
-    notif.id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+  async function addNotification(toUsername, notif) {
+    notif.id   = Date.now().toString(36) + Math.random().toString(36).slice(2);
     notif.time = new Date().toISOString();
     notif.read = false;
-    users[idx].notifications.unshift(notif);
-    // Cap at 50
-    if (users[idx].notifications.length > 50) users[idx].notifications = users[idx].notifications.slice(0, 50);
-    saveUsers(users);
-    broadcast('notification', { to: toUsername, notif });
+    await dbSet(`${P.notifs(toUsername)}/${notif.id}`, notif);
   }
 
-  function markNotificationsRead(username) {
-    const users = getUsers();
-    const idx = users.findIndex(u => u.username === username);
-    if (idx === -1) return;
-    (users[idx].notifications || []).forEach(n => n.read = true);
-    saveUsers(users);
+  async function markNotificationsRead(username) {
+    const data = await dbGet(P.notifs(username));
+    if (!data) return;
+    const updates = {};
+    Object.keys(data).forEach(k => { updates[`${k}/read`] = true; });
+    await dbUpdate(P.notifs(username), updates);
   }
 
-  function getUnreadCount(username) {
-    return getNotifications(username).filter(n => !n.read).length;
+  async function getUnreadCount(username) {
+    const notifs = await getNotifications(username);
+    return notifs.filter(n => !n.read).length;
   }
 
-  // ─── FRIEND SYSTEM ────────────────────────────────────────────────────
-  function sendFriendRequest(fromUsername, toUsername) {
+  // ── Friend System ──────────────────────────────────────────
+  async function sendFriendRequest(fromUsername, toUsername) {
     if (fromUsername === toUsername) return { ok: false, msg: "Can't add yourself." };
-    const users = getUsers();
-    const fi = users.findIndex(u => u.username === fromUsername);
-    const ti = users.findIndex(u => u.username === toUsername);
-    if (fi === -1) return { ok: false, msg: 'Your account not found.' };
-    if (ti === -1) return { ok: false, msg: 'User not found.' };
 
-    const fu = users[fi], tu = users[ti];
-    if (!Array.isArray(fu.friends)) fu.friends = [];
-    if (!Array.isArray(tu.friends)) tu.friends = [];
-    if (!Array.isArray(fu.friendRequestsSent)) fu.friendRequestsSent = [];
-    if (!Array.isArray(tu.friendRequestsReceived)) tu.friendRequestsReceived = [];
+    const [fu, tu] = await Promise.all([
+      getUserByName(fromUsername),
+      getUserByName(toUsername)
+    ]);
+    if (!fu) return { ok: false, msg: 'Your account not found.' };
+    if (!tu) return { ok: false, msg: 'User not found.' };
 
-    if (fu.friends.includes(toUsername)) return { ok: false, msg: 'Already friends.' };
-    if (fu.friendRequestsSent.includes(toUsername)) return { ok: false, msg: 'Request already sent.' };
+    const friends           = fu.friends           || [];
+    const sentReqs          = fu.friendRequestsSent || [];
+    const theirSentReqs     = tu.friendRequestsSent || [];
 
-    // If they already sent us a request, auto-accept
-    if ((tu.friendRequestsSent || []).includes(fromUsername)) {
+    if (friends.includes(toUsername)) return { ok: false, msg: 'Already friends.' };
+    if (sentReqs.includes(toUsername)) return { ok: false, msg: 'Request already sent.' };
+
+    // Auto-accept if they already sent us one
+    if (theirSentReqs.includes(fromUsername)) {
       return acceptFriendRequest(fromUsername, toUsername);
     }
 
-    fu.friendRequestsSent.push(toUsername);
-    if (!tu.friendRequestsReceived.includes(fromUsername)) tu.friendRequestsReceived.push(fromUsername);
+    await dbUpdate(P.user(fromUsername), {
+      friendRequestsSent: [...sentReqs, toUsername]
+    });
+    const theirReceived = tu.friendRequestsReceived || [];
+    if (!theirReceived.includes(fromUsername)) {
+      await dbUpdate(P.user(toUsername), {
+        friendRequestsReceived: [...theirReceived, fromUsername]
+      });
+    }
 
-    saveUsers(users);
-
-    // Notify recipient
-    addNotification(toUsername, { type: 'friend_request', from: fromUsername });
-    broadcast('friend_request', { from: fromUsername, to: toUsername });
-
+    await addNotification(toUsername, { type: 'friend_request', from: fromUsername });
     return { ok: true, msg: `Friend request sent to ${toUsername}!` };
   }
 
-  function acceptFriendRequest(myUsername, fromUsername) {
-    const users = getUsers();
-    const mi = users.findIndex(u => u.username === myUsername);
-    const fi = users.findIndex(u => u.username === fromUsername);
-    if (mi === -1 || fi === -1) return { ok: false, msg: 'User not found.' };
+  async function acceptFriendRequest(myUsername, fromUsername) {
+    const [mu, fu] = await Promise.all([
+      getUserByName(myUsername),
+      getUserByName(fromUsername)
+    ]);
+    if (!mu || !fu) return { ok: false, msg: 'User not found.' };
 
-    const mu = users[mi], fu = users[fi];
+    const myFriends  = [...(mu.friends || [])];
+    const hisFriends = [...(fu.friends || [])];
+    if (!myFriends.includes(fromUsername))  myFriends.push(fromUsername);
+    if (!hisFriends.includes(myUsername))   hisFriends.push(myUsername);
 
-    // Ensure arrays
-    ['friends','friendRequestsSent','friendRequestsReceived'].forEach(k => {
-      if (!Array.isArray(mu[k])) mu[k] = [];
-      if (!Array.isArray(fu[k])) fu[k] = [];
+    await dbUpdate(P.user(myUsername), {
+      friends:                myFriends,
+      friendRequestsReceived: (mu.friendRequestsReceived || []).filter(u => u !== fromUsername),
+      friendRequestsSent:     (mu.friendRequestsSent     || []).filter(u => u !== fromUsername)
+    });
+    await dbUpdate(P.user(fromUsername), {
+      friends:                hisFriends,
+      friendRequestsSent:     (fu.friendRequestsSent     || []).filter(u => u !== myUsername),
+      friendRequestsReceived: (fu.friendRequestsReceived || []).filter(u => u !== myUsername)
     });
 
-    // Add to friends both ways
-    if (!mu.friends.includes(fromUsername)) mu.friends.push(fromUsername);
-    if (!fu.friends.includes(myUsername)) fu.friends.push(myUsername);
-
-    // Remove pending requests
-    mu.friendRequestsReceived = mu.friendRequestsReceived.filter(u => u !== fromUsername);
-    mu.friendRequestsSent = mu.friendRequestsSent.filter(u => u !== fromUsername);
-    fu.friendRequestsSent = fu.friendRequestsSent.filter(u => u !== myUsername);
-    fu.friendRequestsReceived = fu.friendRequestsReceived.filter(u => u !== myUsername);
-
-    // Mark old friend_request notifications as read for myUsername
-    (mu.notifications || []).forEach(n => {
-      if (n.type === 'friend_request' && n.from === fromUsername) n.read = true;
-    });
-
-    saveUsers(users);
-
-    // Notify the sender that request was accepted
-    addNotification(fromUsername, { type: 'friend_accept', from: myUsername });
-    broadcast('friend_accept', { from: myUsername, to: fromUsername });
-
+    await addNotification(fromUsername, { type: 'friend_accept', from: myUsername });
     return { ok: true, msg: `You are now friends with ${fromUsername}!` };
   }
 
-  function declineFriendRequest(myUsername, fromUsername) {
-    const users = getUsers();
-    const mi = users.findIndex(u => u.username === myUsername);
-    const fi = users.findIndex(u => u.username === fromUsername);
-    if (mi !== -1) {
-      if (!Array.isArray(users[mi].friendRequestsReceived)) users[mi].friendRequestsReceived = [];
-      users[mi].friendRequestsReceived = users[mi].friendRequestsReceived.filter(u => u !== fromUsername);
-    }
-    if (fi !== -1) {
-      if (!Array.isArray(users[fi].friendRequestsSent)) users[fi].friendRequestsSent = [];
-      users[fi].friendRequestsSent = users[fi].friendRequestsSent.filter(u => u !== myUsername);
-    }
-    saveUsers(users);
+  // alias
+  const acceptFriend = acceptFriendRequest;
+
+  async function declineFriendRequest(myUsername, fromUsername) {
+    const [mu, fu] = await Promise.all([
+      getUserByName(myUsername),
+      getUserByName(fromUsername)
+    ]);
+    if (mu) await dbUpdate(P.user(myUsername), {
+      friendRequestsReceived: (mu.friendRequestsReceived || []).filter(u => u !== fromUsername)
+    });
+    if (fu) await dbUpdate(P.user(fromUsername), {
+      friendRequestsSent: (fu.friendRequestsSent || []).filter(u => u !== myUsername)
+    });
     return { ok: true };
   }
 
-  function removeFriend(myUsername, friendUsername) {
-    const users = getUsers();
-    const mi = users.findIndex(u => u.username === myUsername);
-    const fi = users.findIndex(u => u.username === friendUsername);
-    if (mi !== -1) {
-      if (!Array.isArray(users[mi].friends)) users[mi].friends = [];
-      users[mi].friends = users[mi].friends.filter(u => u !== friendUsername);
-    }
-    if (fi !== -1) {
-      if (!Array.isArray(users[fi].friends)) users[fi].friends = [];
-      users[fi].friends = users[fi].friends.filter(u => u !== myUsername);
-    }
-    saveUsers(users);
+  async function removeFriend(myUsername, friendUsername) {
+    const [mu, fu] = await Promise.all([
+      getUserByName(myUsername),
+      getUserByName(friendUsername)
+    ]);
+    if (mu) await dbUpdate(P.user(myUsername), {
+      friends: (mu.friends || []).filter(u => u !== friendUsername)
+    });
+    if (fu) await dbUpdate(P.user(friendUsername), {
+      friends: (fu.friends || []).filter(u => u !== myUsername)
+    });
     return { ok: true };
   }
 
-  // ─── DIRECT MESSAGES ─────────────────────────────────────────────────
-  function getDMMessages(user1, user2) {
-    return get(dmKey(user1, user2), []);
+  // ── Direct Messages ────────────────────────────────────────
+  async function getDMMessages(user1, user2) {
+    const data = await dbGet(P.dm(user1, user2));
+    if (!data) return [];
+    return Object.values(data).sort((a, b) =>
+      new Date(a.timestamp) - new Date(b.timestamp)
+    );
   }
 
-  function sendDMMessage(fromUsername, toUsername, text) {
-    const key = dmKey(fromUsername, toUsername);
-    const msgs = get(key, []);
+  async function sendDMMessage(fromUsername, toUsername, text) {
     const now = new Date();
     const msg = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-      from: fromUsername,
+      id:        Date.now().toString(36) + Math.random().toString(36).slice(2),
+      from:      fromUsername,
       text,
-      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time:      now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: now.toISOString()
     };
-    msgs.push(msg);
-    set(key, msgs);
 
-    // Track DM partners in a global index
-    const dmsIndex = get(KEY_DMS, {});
-    if (!dmsIndex[fromUsername]) dmsIndex[fromUsername] = [];
-    if (!dmsIndex[toUsername]) dmsIndex[toUsername] = [];
-    if (!dmsIndex[fromUsername].includes(toUsername)) dmsIndex[fromUsername].unshift(toUsername);
-    if (!dmsIndex[toUsername].includes(fromUsername)) dmsIndex[toUsername].unshift(fromUsername);
-    // Keep only 30 recent partners
-    dmsIndex[fromUsername] = dmsIndex[fromUsername].slice(0, 30);
-    dmsIndex[toUsername] = dmsIndex[toUsername].slice(0, 30);
-    set(KEY_DMS, dmsIndex);
+    // Save message
+    await dbSet(`${P.dm(fromUsername, toUsername)}/${msg.id}`, msg);
 
-    // Notify recipient
-    addNotification(toUsername, { type: 'dm', from: fromUsername, data: { preview: text.slice(0, 60) } });
-    broadcast('dm', { from: fromUsername, to: toUsername, msgId: msg.id });
+    // Update DM index for both users
+    const [myIdx, theirIdx] = await Promise.all([
+      dbGet(P.dmIndex(fromUsername)),
+      dbGet(P.dmIndex(toUsername))
+    ]);
+
+    const updateIdx = async (username, partner, current) => {
+      const arr = current ? (Array.isArray(current) ? current : Object.values(current)) : [];
+      const filtered = arr.filter(u => u !== partner);
+      filtered.unshift(partner);
+      await dbSet(P.dmIndex(username), filtered.slice(0, 30));
+    };
+    await Promise.all([
+      updateIdx(fromUsername, toUsername, myIdx),
+      updateIdx(toUsername, fromUsername, theirIdx)
+    ]);
+
+    await addNotification(toUsername, {
+      type: 'dm', from: fromUsername,
+      data: { preview: text.slice(0, 60) }
+    });
 
     return msg;
   }
 
-  function getRecentDMPartners(username) {
-    const idx = get(KEY_DMS, {});
-    return idx[username] || [];
+  async function getRecentDMPartners(username) {
+    const data = await dbGet(P.dmIndex(username));
+    if (!data) return [];
+    return Array.isArray(data) ? data : Object.values(data);
   }
 
-  // ─── BASTION MESSAGES ─────────────────────────────────────────────────
-  function getBastionChannelMessages(bastionKey, channelId) {
-    const all = get(KEY_BAST_MSGS, {});
-    return all[`${bastionKey}_${channelId}`] || [];
+  // ── Bastion Messages ───────────────────────────────────────
+  async function getBastionChannelMessages(bastionId, channelId) {
+    const data = await dbGet(P.bastionMsgs(bastionId, channelId));
+    if (!data) return [];
+    return Object.values(data).sort((a, b) =>
+      new Date(a.timestamp) - new Date(b.timestamp)
+    );
   }
 
-  function sendBastionChannelMessage(bastionKey, channelId, fromUsername, text) {
-    const all = get(KEY_BAST_MSGS, {});
-    const k = `${bastionKey}_${channelId}`;
-    if (!all[k]) all[k] = [];
+  async function sendBastionChannelMessage(bastionId, channelId, fromUsername, text) {
     const now = new Date();
+    const msgRef = db.ref(P.bastionMsgs(bastionId, channelId)).push();
     const msg = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-      from: fromUsername,
+      id:        msgRef.key,
+      from:      fromUsername,
       text,
-      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time:      now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: now.toISOString()
     };
-    all[k].push(msg);
-    // Cap at 500 messages per channel
-    if (all[k].length > 500) all[k] = all[k].slice(-500);
-    set(KEY_BAST_MSGS, all);
-    broadcast('bastion_msg', { bastionKey, channelId, msg });
+    await msgRef.set(msg);
     return msg;
   }
 
-  function addReaction(bastionKey, channelId, msgId, emoji, username) {
-    const all = get(KEY_BAST_MSGS, {});
-    const k = `${bastionKey}_${channelId}`;
-    const msgs = all[k] || [];
-    const msg = msgs.find(m => m.id === msgId);
-    if (!msg) return;
-    if (!msg.reactions) msg.reactions = {};
-    if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
-    const idx = msg.reactions[emoji].indexOf(username);
-    if (idx !== -1) msg.reactions[emoji].splice(idx, 1);
-    else msg.reactions[emoji].push(username);
-    if (msg.reactions[emoji].length === 0) delete msg.reactions[emoji];
-    set(KEY_BAST_MSGS, all);
+  async function addReaction(bastionId, channelId, msgId, emoji, username) {
+    const path = `${P.bastionMsgs(bastionId, channelId)}/${msgId}/reactions/${emoji}`;
+    await dbTransaction(path, current => {
+      const arr = current ? (Array.isArray(current) ? current : Object.values(current)) : [];
+      const idx = arr.indexOf(username);
+      if (idx !== -1) arr.splice(idx, 1);
+      else arr.push(username);
+      return arr.length ? arr : null; // null removes the node
+    });
   }
 
-  // ─── POLLING / REAL-TIME ─────────────────────────────────────────────
-  let _pollInterval = null;
-  let _lastNotifCount = 0;
-  let _pollCallbacks = {};
+  // ── Global Bastions Registry ───────────────────────────────
+  async function getGlobalBastions() {
+    return (await dbGet(P.globalBastions)) || {};
+  }
+
+  async function saveGlobalBastion(id, data) {
+    await dbSet(P.globalBastion(id), data);
+  }
+
+  async function getGlobalBastion(id) {
+    return dbGet(P.globalBastion(id));
+  }
+
+  // ── Bastion Members ────────────────────────────────────────
+  async function getBastionMembers(bastionId) {
+    const data = await dbGet(P.bastionMembers(bastionId));
+    if (!data) return [];
+    return Array.isArray(data) ? data : Object.values(data);
+  }
+
+  async function addBastionMember(bastionId, username) {
+    const members = await getBastionMembers(bastionId);
+    if (!members.includes(username)) members.push(username);
+    await dbSet(P.bastionMembers(bastionId), members);
+  }
+
+  async function removeBastionMember(bastionId, username) {
+    const members = await getBastionMembers(bastionId);
+    await dbSet(P.bastionMembers(bastionId), members.filter(u => u !== username));
+  }
+
+  // ── Invites ────────────────────────────────────────────────
+  async function getInvite(code) {
+    return dbGet(P.invite(code));
+  }
+
+  async function saveInvite(code, data) {
+    await dbSet(P.invite(code), data);
+  }
+
+  async function incrementInviteUses(code) {
+    await dbTransaction(P.invite(code) + '/uses', n => (n || 0) + 1);
+  }
+
+  // ── Real-time Polling / Listeners ─────────────────────────
+  let _listeners = [];  // { ref, handler } to unsubscribe
+  let _callbacks = {};
 
   function startPolling(username, callbacks = {}) {
-    _pollCallbacks = callbacks;
-    stopPolling();
+    _callbacks = callbacks;
+    stopPolling(); // clean up any existing listeners
 
-    // Listen via BroadcastChannel (cross-tab, instant)
-    if (bc) {
-      bc.onmessage = (e) => {
-        const { type, data } = e.data;
-        if (!data) return;
+    // 1. Notifications — fires whenever a new notif is added
+    const notifRef = db.ref(P.notifs(username));
+    const notifHandler = notifRef.on('child_added', snap => {
+      const n = snap.val();
+      if (!n || n.read) return; // skip already-read on first load
+      _callbacks.onNewNotification?.(n);
+      updateNotifBadgeExternal(username);
+    });
+    _listeners.push({ ref: notifRef, event: 'child_added', handler: notifHandler });
 
-        if (type === 'notification' && data.to === username) {
-          _pollCallbacks.onNewNotification?.(data.notif);
-        }
-        if (type === 'dm' && data.to === username) {
-          _pollCallbacks.onNewDM?.(data);
-        }
-        if (type === 'friend_request' && data.to === username) {
-          _pollCallbacks.onFriendRequest?.(data);
-        }
-        if (type === 'friend_accept' && data.to === username) {
-          _pollCallbacks.onFriendAccept?.(data);
-        }
-        if (type === 'status') {
-          _pollCallbacks.onStatusChange?.(data);
-        }
-      };
-    }
+    // 2. DMs — fires when a new message arrives addressed to this user
+    const dmIndexRef = db.ref(P.dmIndex(username));
+    const dmIndexHandler = dmIndexRef.on('value', snap => {
+      // Re-build the sidebar DM list (calls app.html's buildDMItems equivalent)
+      _callbacks.onDMIndexChange?.();
+    });
+    _listeners.push({ ref: dmIndexRef, event: 'value', handler: dmIndexHandler });
 
-    // Fallback: poll localStorage every 2 seconds
-    _pollInterval = setInterval(() => {
-      const count = getUnreadCount(username);
-      if (count !== _lastNotifCount) {
-        const notifs = getNotifications(username);
-        const newest = notifs.find(n => !n.read);
-        if (newest) _pollCallbacks.onNewNotification?.(newest);
-        _lastNotifCount = count;
-      }
-    }, 2000);
+    // 3. Status changes of friends
+    const statusRef = db.ref('statuses');
+    const statusHandler = statusRef.on('child_changed', snap => {
+      _callbacks.onStatusChange?.({ username: snap.key, status: snap.val() });
+    });
+    _listeners.push({ ref: statusRef, event: 'child_changed', handler: statusHandler });
 
-    _lastNotifCount = getUnreadCount(username);
+    // Bastion message listener is set up per-channel (see listenBastionChannel below)
   }
 
   function stopPolling() {
-    clearInterval(_pollInterval);
-    _pollInterval = null;
-    if (bc) bc.onmessage = null;
+    _listeners.forEach(({ ref, event, handler }) => {
+      try { ref.off(event, handler); } catch (_) {}
+    });
+    _listeners = [];
   }
 
-  // ─── AUDIO ────────────────────────────────────────────────────────────
+  /**
+   * Call this when entering a bastion channel to get real-time messages.
+   * Returns an unsubscribe function — call it when leaving the channel.
+   */
+  function listenBastionChannel(bastionId, channelId, callback) {
+    const ref = db.ref(P.bastionMsgs(bastionId, channelId));
+    const handler = ref.on('child_added', snap => {
+      callback?.(snap.val());
+    });
+    return () => ref.off('child_added', handler);
+  }
+
+  /**
+   * Real-time listener for a single DM thread.
+   * Returns an unsubscribe function.
+   */
+  function listenDM(user1, user2, callback) {
+    const ref = db.ref(P.dm(user1, user2));
+    const handler = ref.on('child_added', snap => {
+      callback?.(snap.val());
+    });
+    return () => ref.off('child_added', handler);
+  }
+
+  // ── Badge helper (calls app.html's updateNotifBadge if it exists) ──
+  async function updateNotifBadgeExternal(username) {
+    if (typeof window !== 'undefined' && typeof window.updateNotifBadge === 'function') {
+      window.updateNotifBadge();
+    }
+  }
+
+  // ── Audio ───────────────────────────────────────────────────
   function playNotificationSound() {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -412,32 +511,56 @@ const FortizedSocial = (() => {
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.3);
-    } catch(e) {}
+    } catch (_) {}
   }
 
-  // ─── PUBLIC API ───────────────────────────────────────────────────────
+  // ── Public API ─────────────────────────────────────────────
+  // NOTE: All async functions return Promises.
+  // app.html already calls most of these synchronously and reads .ok / .msg
+  // directly — that still works because JavaScript doesn't throw on
+  // unhandled promise returns; BUT for proper UX you should await them.
+  // The compatibility shim below makes sync-looking code work by returning
+  // a Promise that app.html can optionally await.
+
   return {
     // Auth
     register, login, logout, getCurrentUsername,
+
     // Users
-    getUsers, getUserByName, saveUserObject, initUser,
+    getUsers, getUserByName, saveUserObject,
+
     // Status
     getStatus, setStatus,
+
     // Notifications
     getNotifications, addNotification, markNotificationsRead, getUnreadCount,
+
     // Friends
-    sendFriendRequest, acceptFriendRequest: acceptFriendRequest,
-    declineFriendRequest, removeFriend,
+    sendFriendRequest,
+    acceptFriendRequest,
+    acceptFriend,
+    declineFriendRequest,
+    removeFriend,
+
     // DMs
     getDMMessages, sendDMMessage, getRecentDMPartners,
+
     // Bastion messages
     getBastionChannelMessages, sendBastionChannelMessage, addReaction,
-    // Polling
+
+    // Global bastions & members
+    getGlobalBastions, saveGlobalBastion, getGlobalBastion,
+    getBastionMembers, addBastionMember, removeBastionMember,
+
+    // Invites
+    getInvite, saveInvite, incrementInviteUses,
+
+    // Real-time
     startPolling, stopPolling,
+    listenBastionChannel, listenDM,
+
     // Utils
     playNotificationSound,
-    // Accept alias for legacy code
-    acceptFriend: acceptFriendRequest,
   };
 
 })();
