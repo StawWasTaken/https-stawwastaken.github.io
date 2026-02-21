@@ -318,10 +318,31 @@ footer .copy { font-size: 12.5px; color: #2d3548; text-align: center; }
     <!-- Articles -->
     <div>
 
-      <!-- Article 1: Atelier (featured) -->
-      <div class="featured-card reveal" onclick="openArticle('atelier')">
+      <!-- Article 1: What is Fortized? (FEATURED) -->
+      <div class="featured-card reveal" onclick="openArticle('whatisfortized')">
         <div class="card-banner">
           <span class="card-badge">⭐ Latest</span>
+        </div>
+        <div class="card-body">
+          <div class="article-meta">
+            <span class="article-category">R&amp;D</span>
+            <span class="article-date">February 24, 2026</span>
+            <span class="read-time">2 min read</span>
+            <div class="author-pill">
+              <div class="author-av-sm">T</div>
+              <span>Tyrianum · CRDO</span>
+            </div>
+          </div>
+          <div class="card-title">What is Fortized?</div>
+          <div class="card-excerpt">Fortized started with a simple question: why does building a community feel harder than it should? Here's how we built a digital stronghold around structure, identity, and progression — and what makes it different.</div>
+          <span class="read-more">Read Article →</span>
+        </div>
+      </div>
+
+      <!-- Article 2: Atelier -->
+      <div class="featured-card reveal reveal-d1" onclick="openArticle('atelier')">
+        <div class="card-banner">
+          <span class="card-badge secondary">🏗️ R&amp;D</span>
         </div>
         <div class="card-body">
           <div class="article-meta">
@@ -339,7 +360,7 @@ footer .copy { font-size: 12.5px; color: #2d3548; text-align: center; }
         </div>
       </div>
 
-      <!-- Article 2: Safety -->
+      <!-- Article 3: Safety -->
       <div class="featured-card reveal reveal-d1" onclick="openArticle('safety')">
         <div class="card-banner">
           <span class="card-badge secondary">🛡️ Safety</span>
@@ -360,7 +381,7 @@ footer .copy { font-size: 12.5px; color: #2d3548; text-align: center; }
         </div>
       </div>
 
-      <!-- Article 3: Gates -->
+      <!-- Article 4: Gates -->
       <div class="featured-card reveal reveal-d2" onclick="openArticle('gates')">
         <div class="card-banner">
           <span class="card-badge secondary">🚀 Announcement</span>
@@ -377,27 +398,6 @@ footer .copy { font-size: 12.5px; color: #2d3548; text-align: center; }
           </div>
           <div class="card-title">The Gates are Unlocking</div>
           <div class="card-excerpt">After months of intensive development and rigorous security testing, we are officially on the horizon of a new era. The Fortized Beta is live — here's everything you need to know about what's waiting inside the Fortress.</div>
-          <span class="read-more">Read Article →</span>
-        </div>
-      </div>
-
-      <!-- Article 4: What is Fortized? (NEW) -->
-      <div class="featured-card reveal reveal-d2" onclick="openArticle('whatisfortized')">
-        <div class="card-banner">
-          <span class="card-badge secondary">🏰 R&amp;D</span>
-        </div>
-        <div class="card-body">
-          <div class="article-meta">
-            <span class="article-category">R&amp;D</span>
-            <span class="article-date">February 24, 2026</span>
-            <span class="read-time">2 min read</span>
-            <div class="author-pill">
-              <div class="author-av-sm">T</div>
-              <span>Tyrianum · CRDO</span>
-            </div>
-          </div>
-          <div class="card-title">What is Fortized?</div>
-          <div class="card-excerpt">Fortized started with a simple question: why does building a community feel harder than it should? Here's how we built a digital stronghold around structure, identity, and progression — and what makes it different.</div>
           <span class="read-more">Read Article →</span>
         </div>
       </div>
@@ -682,9 +682,9 @@ function buildSidebar(article) {
 /* ─────────────────────────────────────
    OPEN / CLOSE ARTICLE
 ───────────────────────────────────── */
-function openArticle(id) {
+function renderArticle(id) {
   const a = ARTICLES[id];
-  if (!a) return;
+  if (!a) return false;
 
   document.getElementById('article-content').innerHTML = `
     <div class="article-full-banner">
@@ -711,19 +711,52 @@ function openArticle(id) {
   `;
 
   document.getElementById('article-sidebar').innerHTML = buildSidebar(a);
+  document.title = `${a.title} — Fortized Blog`;
 
   document.getElementById('blog-list-view').classList.add('hidden');
-  const view = document.getElementById('article-view');
-  view.classList.add('open');
+  document.getElementById('article-view').classList.add('open');
+  return true;
+}
+
+function openArticle(id) {
+  if (!ARTICLES[id]) return;
+  history.pushState({ articleId: id }, '', `/article/${id}`);
+  renderArticle(id);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function closeArticle() {
+  history.pushState({ articleId: null }, '', '/blog');
   document.getElementById('blog-list-view').classList.remove('hidden');
-  const view = document.getElementById('article-view');
-  view.classList.remove('open');
+  document.getElementById('article-view').classList.remove('open');
+  document.title = 'Fortized Blog';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+/* Handle browser back/forward */
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.articleId) {
+    renderArticle(e.state.articleId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    document.getElementById('blog-list-view').classList.remove('hidden');
+    document.getElementById('article-view').classList.remove('open');
+    document.title = 'Fortized Blog';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+
+/* Handle direct URL load e.g. /article/whatisfortized */
+(function() {
+  const match = window.location.pathname.match(/^\/article\/([^/]+)/);
+  if (match) {
+    const id = match[1];
+    if (ARTICLES[id]) {
+      renderArticle(id);
+      history.replaceState({ articleId: id }, '', `/article/${id}`);
+    }
+  }
+})();
 </script>
 
 </body>
