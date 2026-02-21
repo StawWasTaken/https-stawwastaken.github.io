@@ -1,11 +1,11 @@
-const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyDeKw90592XdSKSXr1mefodYhca53AVP9M",
-  authDomain:        "fortized-5ffcf.firebaseapp.com",
-  databaseURL:       "https://fortized-5ffcf-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId:         "fortized-5ffcf",
-  storageBucket:     "fortized-5ffcf.firebasestorage.app",
+const firebaseConfig = {
+  apiKey: "AIzaSyDeKw90592XdSKSXr1mefodYhca53AVP9M",
+  authDomain: "fortized-5ffcf.firebaseapp.com",
+  databaseURL: "https://fortized-5ffcf-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "fortized-5ffcf",
+  storageBucket: "fortized-5ffcf.firebasestorage.app",
   messagingSenderId: "232126031951",
-  appId:             "1:232126031951:web:c66312d3175f137c25223a"
+  appId: "1:232126031951:web:c66312d3175f137c25223a"
 };
 // ─────────────────────────────────────────────────────────────
 
