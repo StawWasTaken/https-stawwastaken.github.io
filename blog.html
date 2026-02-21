@@ -125,6 +125,8 @@ nav {
   border-radius: 6px; padding: 3px 10px;
 }
 .article-date { font-size: 12.5px; color: var(--muted); }
+.read-time { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+.read-time::before { content: "⏱"; font-size: 10px; opacity: .7; }
 .author-pill {
   display: flex; align-items: center; gap: 6px;
   font-size: 12px; color: var(--muted-light);
@@ -325,6 +327,7 @@ footer .copy { font-size: 12.5px; color: #2d3548; text-align: center; }
           <div class="article-meta">
             <span class="article-category">R&amp;D</span>
             <span class="article-date">February 21, 2026</span>
+            <span class="read-time">3 min read</span>
             <div class="author-pill">
               <div class="author-av-sm">T</div>
               <span>Tyrianum · CRDO</span>
@@ -345,6 +348,7 @@ footer .copy { font-size: 12.5px; color: #2d3548; text-align: center; }
           <div class="article-meta">
             <span class="article-category">Safety</span>
             <span class="article-date">February 20, 2026</span>
+            <span class="read-time">4 min read</span>
             <div class="author-pill">
               <div class="author-av-sm">W</div>
               <span>Weaverdant · CSO</span>
@@ -352,6 +356,27 @@ footer .copy { font-size: 12.5px; color: #2d3548; text-align: center; }
           </div>
           <div class="card-title">How Stawdio Safety Protects Your Bastion</div>
           <div class="card-excerpt">As head of the Stawdio Safety Department, I oversee the Fortized Security Department to ensure your Bastion stays under your total sovereignty. Here's the layered infrastructure that keeps the Fortress standing strong.</div>
+          <span class="read-more">Read Article →</span>
+        </div>
+      </div>
+
+      <!-- Article 3: Gates -->
+      <div class="featured-card reveal reveal-d2" onclick="openArticle('gates')">
+        <div class="card-banner">
+          <span class="card-badge secondary">🚀 Announcement</span>
+        </div>
+        <div class="card-body">
+          <div class="article-meta">
+            <span class="article-category">Announcement</span>
+            <span class="article-date">February 21, 2026</span>
+            <span class="read-time">2 min read</span>
+            <div class="author-pill">
+              <div class="author-av-sm">M</div>
+              <span>Maus · CCO</span>
+            </div>
+          </div>
+          <div class="card-title">The Gates are Unlocking</div>
+          <div class="card-excerpt">After months of intensive development and rigorous security testing, we are officially on the horizon of a new era. The Fortized Beta is live — here's everything you need to know about what's waiting inside the Fortress.</div>
           <span class="read-more">Read Article →</span>
         </div>
       </div>
@@ -397,6 +422,13 @@ footer .copy { font-size: 12.5px; color: #2d3548; text-align: center; }
             <div>
               <div class="author-name" style="font-size:13.5px;margin-bottom:2px;">Weaverdant</div>
               <div class="author-role" style="font-size:10px;padding:2px 8px;">CSO</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="author-avatar-big" style="width:44px;height:44px;font-size:17px;margin:0;flex-shrink:0;">M</div>
+            <div>
+              <div class="author-name" style="font-size:13.5px;margin-bottom:2px;">Maus</div>
+              <div class="author-role" style="font-size:10px;padding:2px 8px;">CCO</div>
             </div>
           </div>
         </div>
@@ -460,6 +492,7 @@ const ARTICLES = {
   atelier: {
     category: 'R&amp;D',
     date: 'February 21, 2026',
+    readTime: '3 min read',
     authorInitial: 'T',
     authorPillLabel: 'Stawdio R&amp;D Department',
     title: 'Introducing The Atelier',
@@ -524,6 +557,14 @@ const ARTICLES = {
             <div class="stub-meta">February 20, 2026 · Weaverdant</div>
           </div>
         </div>
+        <div class="article-stub" onclick="openArticle('gates')" style="margin-top:8px;">
+          <div class="stub-icon">🚀</div>
+          <div class="stub-body">
+            <div class="stub-cat">Announcement</div>
+            <div class="stub-title">The Gates are Unlocking</div>
+            <div class="stub-meta">February 21, 2026 · Maus</div>
+          </div>
+        </div>
       </div>
       <div class="sidebar-block" style="background:rgba(255,249,62,.04);border-color:rgba(255,249,62,.15);">
         <div class="sidebar-title" style="color:var(--accent);">Try the Atelier</div>
@@ -536,6 +577,7 @@ const ARTICLES = {
   safety: {
     category: 'Safety',
     date: 'February 20, 2026',
+    readTime: '4 min read',
     authorInitial: 'W',
     authorPillLabel: 'Weaverdant · CSO',
     title: 'How Stawdio Safety Protects Your Bastion',
@@ -548,7 +590,7 @@ const ARTICLES = {
 
       <h2>🛡️ The Fortized Safety Infrastructure</h2>
 
-      <p>Our safety ecosystem is a multi-layered shield designed to protect every user, from the casual explorer to the battle-hardened admin. Per <a href="terms.html" class="term-link" target="_blank">Term 3 of our TOU</a>, we provide:</p>
+      <p>Our safety ecosystem is a multi-layered shield designed to protect every user, from the casual explorer to the battle-hardened admin. Per <a href="terms.html" class="term-link" target="_blank">Term 3 of our Terms</a>, we provide:</p>
 
       <ul>
         <li><strong>Automated Moderation (AutoMod):</strong> Real-time content filtering that detects and acts on policy-violating messages before they ever reach another user.</li>
@@ -562,7 +604,7 @@ const ARTICLES = {
 
       <p>While we maintain a comprehensive suite of safety systems to reduce the risk of harmful interactions, no platform can guarantee the total prevention of misconduct by individual users.</p>
 
-      <p>Per <a href="terms.html" class="term-link" target="_blank">Term 4 of our TOS</a>, by creating an account you acknowledge that Fortized is an interactive social platform with inherent risks. We provide the tools — but the responsibility for deliberate misuse lies solely with the person who chose to misuse it. Stawdio Group cannot be held liable for the independent actions of third-party users.</p>
+      <p>Per <a href="terms.html" class="term-link" target="_blank">Term 4 of our Service agreement</a>, by creating an account you acknowledge that Fortized is an interactive social platform with inherent risks. We provide the tools — but the responsibility for deliberate misuse lies solely with the person who chose to misuse it. Stawdio Group cannot be held liable for the independent actions of third-party users.</p>
 
       <div class="highlight-box">
         <strong>Our commitment is clear:</strong> Fortized will always invest in safety infrastructure in good faith. The existence of that infrastructure does not — and cannot — transfer the moral or legal responsibility for intentional misconduct away from the individual who commits it.
@@ -570,7 +612,7 @@ const ARTICLES = {
 
       <h2>🚩 Reporting &amp; Resolution</h2>
 
-      <p>When "Walls That Actually Hold" are tested, we rely on our community to be our eyes and ears. Per <a href="terms.html" class="term-link" target="_blank">Term 6 of our TOU</a>, if you witness behaviour that violates our rules, we encourage you to use our built-in report tools.</p>
+      <p>When "Walls That Actually Hold" are tested, we rely on our community to be our eyes and ears. Per <a href="terms.html" class="term-link" target="_blank">Term 6 of our Terms of Use</a>, if you witness behaviour that violates our rules, we encourage you to use our built-in report tools.</p>
 
       <div class="quote-block">
         Engaging Fortized support directly and in good faith is the most effective way to address misconduct on the platform.
@@ -614,6 +656,80 @@ const ARTICLES = {
             <div class="stub-meta">February 21, 2026 · Tyrianum</div>
           </div>
         </div>
+        <div class="article-stub" onclick="openArticle('gates')" style="margin-top:8px;">
+          <div class="stub-icon">🚀</div>
+          <div class="stub-body">
+            <div class="stub-cat">Announcement</div>
+            <div class="stub-title">The Gates are Unlocking</div>
+            <div class="stub-meta">February 21, 2026 · Maus</div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  gates: {
+    category: 'Announcement',
+    date: 'February 21, 2026',
+    readTime: '2 min read',
+    authorInitial: 'M',
+    authorPillLabel: 'Maus · CCO',
+    title: 'The Gates are Unlocking',
+    bylineName: 'Maus',
+    bylineRole: 'Chief Communications Officer, Stawdio Group',
+    content: `
+      <p class="lead">The wait is nearly over. After months of intensive development, late-night R&amp;D sessions, and rigorous security testing, we are officially on the horizon of a new era in gaming communication. Fortized, our modern gaming chat app, is preparing to welcome the world.</p>
+      <p>Our mission at the Stawdio Communications Department is to keep you connected — and today, that connection gets a lot stronger.</p>
+      <h2>🚀 The Beta Has Arrived</h2>
+      <p>While we are not quite ready to announce a final "Launch Day" just yet, we reached a massive milestone yesterday: <strong>The Fortized Beta is officially live.</strong></p>
+      <p>This Beta phase is a critical step in our journey. It allows us to stress-test our "Walls That Actually Hold" and ensure the Atelier economy is perfectly balanced before we open the gates to everyone. We are moving fast, and while a couple of months of hard work are already behind us, the most exciting part is just beginning.</p>
+      <div class="highlight-box">
+        <strong>What does Beta mean for you?</strong> It means you're early. The Fortress is open, features are live, and your feedback directly shapes what Fortized becomes. There has never been a better time to join.
+      </div>
+      <h2>🏰 What to Expect from the Fortress</h2>
+      <p>Fortized isn't just another chat app — it is a specialized environment designed for gamers to Hangout, Create, Share, Conquer, and Explore.</p>
+      <ul>
+        <li><strong>A Rewarding Experience:</strong> Use the Atelier to turn community engagement into Onyx, which can be traded for premium Radiance packs — no credit card required.</li>
+        <li><strong>Safety by Design:</strong> With oversight from Weaverdant and the Safety Department, your Bastion is protected by AutoMod, Raid Protection, and granular permission controls.</li>
+        <li><strong>Modern Infrastructure:</strong> Built from the ground up to support high-speed gaming coordination and rich media sharing.</li>
+      </ul>
+      <p>The gates are unlocking. <a href="signup.html" class="term-link" target="_blank">Create your account</a> today and stake your claim in the Fortress before the world arrives.</p>
+      <p class="sign-off">— Maus, Chief Communications Officer · Stawdio Group</p>
+    `,
+    sidebar: `
+      <div class="sidebar-block">
+        <div class="sidebar-title">About the Author</div>
+        <div class="author-card">
+          <div class="author-avatar-big">M</div>
+          <div class="author-name">Maus</div>
+          <div class="author-role">CCO</div>
+          <div class="author-org">Stawdio Group</div>
+          <div class="author-bio">Chief Communications Officer at Stawdio Group. Leads the Stawdio Communications Department, responsible for official announcements, community messaging, and platform outreach.</div>
+        </div>
+      </div>
+      <div class="sidebar-block" style="background:rgba(255,249,62,.04);border-color:rgba(255,249,62,.15);">
+        <div class="sidebar-title" style="color:var(--accent);">Join the Beta</div>
+        <p style="font-size:13px;color:var(--muted-light);line-height:1.65;margin-bottom:14px;">The Fortress is open. Create your account and stake your claim before the world arrives.</p>
+        <a href="signup.html" style="display:flex;align-items:center;justify-content:center;gap:7px;background:var(--accent);color:#080a0f;padding:10px 18px;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;text-decoration:none;">Get Started →</a>
+      </div>
+      <div class="sidebar-block">
+        <div class="sidebar-title">More Articles</div>
+        <div class="article-stub" onclick="openArticle('atelier')" style="margin-bottom:8px;">
+          <div class="stub-icon">💎</div>
+          <div class="stub-body">
+            <div class="stub-cat">R&amp;D</div>
+            <div class="stub-title">Introducing The Atelier</div>
+            <div class="stub-meta">February 21, 2026 · Tyrianum</div>
+          </div>
+        </div>
+        <div class="article-stub" onclick="openArticle('safety')">
+          <div class="stub-icon">🛡️</div>
+          <div class="stub-body">
+            <div class="stub-cat">Safety</div>
+            <div class="stub-title">How Stawdio Safety Protects Your Bastion</div>
+            <div class="stub-meta">February 20, 2026 · Weaverdant</div>
+          </div>
+        </div>
       </div>
     `
   }
@@ -641,6 +757,7 @@ function openArticle(id) {
             <span>${art.authorPillLabel}</span>
           </div>
           <span class="article-date" style="color:rgba(255,255,255,.6);font-size:12.5px;">${art.date}</span>
+          <span style="color:rgba(255,255,255,.4);font-size:12px;">⏱ ${art.readTime}</span>
         </div>
       </div>
     </div>
