@@ -121,6 +121,26 @@ nav{
 .item-list li:hover{border-color:rgba(255,249,62,.12);background:rgba(255,249,62,.03);}
 .item-list li::before{content:"✦";color:var(--accent);font-size:10px;flex-shrink:0;margin-top:4px;}
 .divider{height:1px;background:var(--border);margin:56px 0;}
+
+/* Trust & Transparency grid */
+.trust-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0;
+}
+.trust-card{
+  background:rgba(255,255,255,.02);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px 18px;
+  transition:border-color .18s,background .18s;
+}
+.trust-card:hover{border-color:rgba(255,249,62,.14);background:rgba(255,249,62,.025);}
+.trust-card-icon{font-size:18px;margin-bottom:10px;}
+.trust-card h3{
+  font-family:'Syne',sans-serif;font-size:13.5px;font-weight:700;
+  color:#fff;margin-bottom:6px;letter-spacing:-.1px;
+}
+.trust-card p{font-size:13px;color:var(--muted-light);line-height:1.65;margin:0;}
+
 footer{
   border-top:1px solid var(--border);padding:32px 72px;
   display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:20px;
@@ -151,7 +171,7 @@ footer .copy{font-size:12.5px;color:#2d3548;text-align:center;}
     <h1>Privacy Policy</h1>
     <p>How Fortized handles your data, what we collect, and what we never do with it.</p>
     <div class="page-meta">
-      <span><img src="FortizedSecurity logo.png" alt="" style="height:13px;opacity:.7;">Last updated: January 2026</span>
+      <span><img src="FortizedSecurity logo.png" alt="" style="height:13px;opacity:.7;">Last updated: February 2026</span>
       <span>📄 Effective: January 1, 2026</span>
     </div>
   </div>
@@ -190,6 +210,8 @@ footer .copy{font-size:12.5px;color:#2d3548;text-align:center;}
       <li>Clearing your browser data will erase your Fortized account locally</li>
       <li>Data is not accessible to Fortized staff or third parties</li>
     </ul>
+    <p>We approach platform security the same way a military engineer approaches a fortification — in layers. Each layer is designed to stop threats before they reach the next. From account-level protections to application-side safeguards, every component is built with your trust in mind.</p>
+    <div class="highlight-box"><strong>Bastion Sovereignty.</strong> Your Bastion is yours. Our security architecture is designed to ensure that admins retain full, uncompromised control over their communities at all times. Bastion-related data — including membership records, roles, and DMs — is treated with the same protections as personal account data.</div>
     <p>Future versions of Fortized may introduce cloud storage. If and when this happens, this policy will be updated and users will be notified in-app.</p>
   </div>
 
@@ -208,7 +230,36 @@ footer .copy{font-size:12.5px;color:#2d3548;text-align:center;}
   <div class="divider"></div>
 
   <div class="section-block">
-    <h2><span class="num">05</span> Your Rights</h2>
+    <h2><span class="num">05</span> Trust &amp; Transparency</h2>
+    <p>We believe that security only works when it's visible. The Stawdio Safety Department is committed to publishing regular updates on our practices, incident responses, and ongoing platform improvements. We don't hide our walls — we build them in the open.</p>
+    <div class="trust-grid">
+      <div class="trust-card">
+        <div class="trust-card-icon">🔍</div>
+        <h3>Visible Security Practices</h3>
+        <p>We publish updates on how we handle threats, incidents, and improvements to platform defenses as they happen.</p>
+      </div>
+      <div class="trust-card">
+        <div class="trust-card-icon">⚡</div>
+        <h3>Incident Disclosure</h3>
+        <p>In the event of a security incident affecting user data, we will notify affected users promptly and transparently.</p>
+      </div>
+      <div class="trust-card">
+        <div class="trust-card-icon">🛡️</div>
+        <h3>Layered Defense</h3>
+        <p>Security is applied at every layer of the platform — from account authentication to community-level access controls.</p>
+      </div>
+      <div class="trust-card">
+        <div class="trust-card-icon">🏰</div>
+        <h3>Community Sovereignty</h3>
+        <p>Bastion owners hold full administrative authority over their communities. We never override or bypass admin controls.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-block">
+    <h2><span class="num">06</span> Your Rights</h2>
     <p>You have the right to access, modify, or delete your personal data at any time. Because Fortized stores data locally, you can do this directly through your browser settings or through your account profile page.</p>
     <p>If you have concerns about your data or wish to request removal from any future cloud systems, contact us through the official Fortized support channels.</p>
   </div>
@@ -216,7 +267,7 @@ footer .copy{font-size:12.5px;color:#2d3548;text-align:center;}
   <div class="divider"></div>
 
   <div class="section-block">
-    <h2><span class="num">06</span> Changes to This Policy</h2>
+    <h2><span class="num">07</span> Changes to This Policy</h2>
     <p>Fortized reserves the right to update this Privacy Policy at any time. Material changes will be communicated via an in-app notice. Continued use of the platform after changes constitutes acceptance of the updated policy.</p>
   </div>
 
