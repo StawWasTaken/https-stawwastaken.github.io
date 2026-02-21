@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sign Up — Fortized</title>
+<link rel="icon" type="image/png" href="Fortized icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root{--accent:#fff93e;--accent-dim:rgba(255,249,62,.1);--accent-mid:rgba(255,249,62,.2);--accent-glow:rgba(255,249,62,.4);--bg:#080a0f;--panel:rgba(12,15,22,.9);--border:#1a2030;--input-bg:#07090e;--radius:14px;--muted:#5a6478;--muted-light:#8b95a8;}
@@ -31,23 +32,27 @@ body::before{content:"";position:absolute;inset:0;background-image:linear-gradie
 .upload-box strong{color:var(--muted-light);font-weight:600;}
 #pfpName{margin-top:8px;font-size:12px;color:var(--accent);min-height:16px;}
 .divider{height:1px;background:var(--border);margin:24px 0;}
-.terms-block{background:rgba(255,249,62,.03);border:1px solid rgba(255,249,62,.1);border-radius:var(--radius);padding:20px 22px;margin-bottom:20px;}
-.terms-header{display:flex;align-items:center;gap:9px;margin-bottom:14px;}
-.terms-header span{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#3d4860;}
-.terms-scroll{max-height:110px;overflow-y:auto;font-size:12.5px;color:var(--muted);line-height:1.75;margin-bottom:16px;padding-right:6px;scrollbar-width:thin;scrollbar-color:#1a2030 transparent;}
-.terms-scroll::-webkit-scrollbar{width:3px;}
-.terms-scroll::-webkit-scrollbar-thumb{background:#1a2030;border-radius:3px;}
-.terms-scroll h4{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#333d52;margin:10px 0 4px;}
-.terms-scroll h4:first-child{margin-top:0;}
-.terms-checkbox{display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;}
-.terms-checkbox input[type=checkbox]{display:none;}
-.checkbox-box{width:20px;height:20px;min-width:20px;border-radius:6px;border:1.5px solid #252e42;background:var(--input-bg);display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.terms-checkbox input:checked + .checkbox-box{background:var(--accent);border-color:var(--accent);}
+
+/* ── Compact agree notice ── */
+.agree-notice{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:14px 16px;
+  background:rgba(255,249,62,.03);
+  border:1px solid rgba(255,249,62,.1);
+  border-radius:var(--radius);
+  margin-bottom:20px;
+  cursor:pointer;
+  user-select:none;
+}
+.agree-notice input[type=checkbox]{display:none;}
+.checkbox-box{width:20px;height:20px;min-width:20px;border-radius:6px;border:1.5px solid #252e42;background:var(--input-bg);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;margin-top:1px;}
+.agree-notice input:checked + .checkbox-box{background:var(--accent);border-color:var(--accent);}
 .checkmark{display:none;width:11px;height:11px;}
-.terms-checkbox input:checked + .checkbox-box .checkmark{display:block;}
-.terms-checkbox span{font-size:13px;color:var(--muted-light);line-height:1.45;}
-.terms-checkbox span a{color:var(--accent);text-decoration:none;font-weight:600;}
-.terms-checkbox span a:hover{text-decoration:underline;}
+.agree-notice input:checked + .checkbox-box .checkmark{display:block;}
+.agree-text{font-size:13px;color:var(--muted-light);line-height:1.55;}
+.agree-text a{color:var(--accent);text-decoration:none;font-weight:600;}
+.agree-text a:hover{text-decoration:underline;}
+
 .error{font-size:12.5px;color:#f87171;margin-bottom:14px;min-height:18px;display:flex;align-items:center;gap:7px;}
 .error:not(:empty)::before{content:"⚠";font-size:12px;}
 .field-error{font-size:12px;color:#f87171;margin-top:5px;min-height:16px;}
@@ -103,30 +108,17 @@ body::before{content:"";position:absolute;inset:0;background-image:linear-gradie
 
     <div class="divider"></div>
 
-    <div class="terms-block">
-      <div class="terms-header">
-        <span>🛡️ Your Data is Protected</span>
+    <label class="agree-notice">
+      <input type="checkbox" id="terms">
+      <div class="checkbox-box">
+        <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+          <path d="M2 6l3 3 5-5" stroke="#080a0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
-      <div class="terms-scroll">
-        <h4>Terms of Use</h4>
-        By using Fortized you agree to use the platform respectfully and lawfully. You may not use Fortized to harass, impersonate, or harm other users. Accounts found in violation may be suspended or permanently banned without notice.
-        <h4>Privacy &amp; Data</h4>
-        Your data is stored in Firebase (Google Cloud). Fortized does not sell personal information. Profile pictures and account details are stored securely in the cloud database.
-        <h4>Community Standards</h4>
-        All users are expected to maintain a respectful environment. Hate speech, threats, and spam are strictly prohibited. Fortized reserves the right to remove content that violates these standards.
-        <h4>Changes to Terms</h4>
-        These terms may be updated at any time. Continued use of the platform constitutes acceptance of any revised terms.
+      <div class="agree-text">
+        By creating an account you agree to our <a href="terms.html" target="_blank" onclick="event.stopPropagation()">Terms of Service</a>. Learn how we handle your data in our <a href="privacy.html" target="_blank" onclick="event.stopPropagation()">Privacy Policy</a>.
       </div>
-      <label class="terms-checkbox">
-        <input type="checkbox" id="terms">
-        <div class="checkbox-box">
-          <svg class="checkmark" viewBox="0 0 12 12" fill="none">
-            <path d="M2 6l3 3 5-5" stroke="#080a0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <span>I have read and agree to the Terms of Use and Privacy Policy</span>
-      </label>
-    </div>
+    </label>
 
     <div id="error" class="error"></div>
 
@@ -181,7 +173,7 @@ async function doSignup() {
   userErrorDiv.textContent = '';
 
   if (!email || !username || !password) { errorDiv.textContent = 'All fields are required.'; return; }
-  if (!terms) { errorDiv.textContent = 'You must accept the terms to continue.'; return; }
+  if (!terms) { errorDiv.textContent = 'You must agree to the Terms to continue.'; return; }
 
   setLoading(true);
 
@@ -193,7 +185,6 @@ async function doSignup() {
       return;
     }
 
-    // Handle optional profile picture
     const file = pfpInput.files[0];
     if (file) {
       const reader = new FileReader();
@@ -203,14 +194,12 @@ async function doSignup() {
           await FortizedSocial.saveUserObject(updatedUser);
         } catch (err) {
           console.error('PFP save error:', err);
-          // Non-fatal — continue to app anyway
         }
         localStorage.setItem('ftz_current', username);
         localStorage.setItem('fortized_current_user', username);
         window.location.href = 'app.html';
       };
       reader.onerror = () => {
-        // PFP failed to read — still proceed
         localStorage.setItem('ftz_current', username);
         localStorage.setItem('fortized_current_user', username);
         window.location.href = 'app.html';
