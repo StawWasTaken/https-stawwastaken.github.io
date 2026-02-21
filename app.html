@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fortized</title>
+<link rel="icon" type="image/png" href="Fortized icon.png">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="FortizedSocial-firebase.js"></script>
@@ -1100,7 +1101,7 @@ async function confirmBuy(){
 function buildProfileView(tab){
   const nav=document.getElementById('profile-nav');const main=document.getElementById('profile-main');nav.innerHTML='';
   const items=[['myprofile','👤','My Profile'],['account','🔐','Account'],['appearance','🎨','Appearance'],['privacy','🛡️','Privacy'],['notifs_settings','🔔','Notifications']];
-  items.forEach(([t,i,l])=>{const el=document.createElement('div');el.className='profile-nav-item'+(tab===t?' active':'');el.innerHTML=`<span>${i}</span><span>${l}</span>`;el.onclick=()=>buildProfileView(t);nav.appendChild(el);});
+  items.forEach(([t,i,l])=>{const el=document.createElement('div');el.className='profile-nav-item'+(tab===t?' active':'');el.innerHTML=`<span>${i}</span><span>${l}</span>`;el.onclick=()=>{ if(t==='privacy'){ window.open('privacy.html','_blank'); } else { buildProfileView(t); } };nav.appendChild(el);nav.appendChild(el);});
   const spacer=document.createElement('div');spacer.style.flex='1';nav.appendChild(spacer);
   const out=document.createElement('div');out.className='profile-nav-item';out.style.color='var(--red)';out.innerHTML=`<span>🚪</span><span>Log Out</span>`;out.onclick=doLogout;nav.appendChild(out);
 
