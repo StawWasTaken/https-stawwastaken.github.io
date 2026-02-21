@@ -6,153 +6,59 @@
 <title>Sign Up — Fortized</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
-:root{
-  --accent:#fff93e;
-  --accent-dim:rgba(255,249,62,.1);
-  --accent-mid:rgba(255,249,62,.2);
-  --accent-glow:rgba(255,249,62,.4);
-  --bg:#080a0f;
-  --panel:rgba(12,15,22,.9);
-  --border:#1a2030;
-  --input-bg:#07090e;
-  --radius:14px;
-  --muted:#5a6478;
-  --muted-light:#8b95a8;
-}
+:root{--accent:#fff93e;--accent-dim:rgba(255,249,62,.1);--accent-mid:rgba(255,249,62,.2);--accent-glow:rgba(255,249,62,.4);--bg:#080a0f;--panel:rgba(12,15,22,.9);--border:#1a2030;--input-bg:#07090e;--radius:14px;--muted:#5a6478;--muted-light:#8b95a8;}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{
-  min-height:100vh;
-  background:
-    linear-gradient(105deg, rgba(8,10,15,.98) 0%, rgba(8,10,15,.75) 100%),
-    url("Fortized banner.png") center / cover no-repeat fixed;
-  display:flex;align-items:center;justify-content:center;
-  font-family:'DM Sans',sans-serif;
-  color:white;padding:32px 24px;
-  position:relative;
-}
-body::before{
-  content:"";position:absolute;inset:0;
-  background-image:
-    linear-gradient(rgba(255,249,62,.012) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,249,62,.012) 1px, transparent 1px);
-  background-size:60px 60px;pointer-events:none;
-}
-::-webkit-scrollbar{width:5px;}
-::-webkit-scrollbar-track{background:var(--bg);}
-::-webkit-scrollbar-thumb{background:#1e2535;border-radius:10px;}
-
-.card{
-  position:relative;z-index:1;
-  background:var(--panel);
-  width:100%;max-width:480px;
-  border-radius:22px;
-  border:1px solid var(--border);
-  backdrop-filter:blur(24px);
-  box-shadow:0 40px 100px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.03) inset;
-  overflow:hidden;
-  animation:revealUp .5s cubic-bezier(.22,1,.36,1) both;
-}
+body{min-height:100vh;background:linear-gradient(105deg,rgba(8,10,15,.98) 0%,rgba(8,10,15,.75) 100%),url("Fortized banner.png") center/cover no-repeat fixed;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;color:white;padding:32px 24px;position:relative;}
+body::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,249,62,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,249,62,.012) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;}
+.card{position:relative;z-index:1;background:var(--panel);width:100%;max-width:480px;border-radius:22px;border:1px solid var(--border);backdrop-filter:blur(24px);box-shadow:0 40px 100px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.03) inset;overflow:hidden;animation:revealUp .5s cubic-bezier(.22,1,.36,1) both;}
 @keyframes revealUp{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
-.card-bar{height:2px;background:linear-gradient(90deg, transparent, var(--accent), transparent);}
+.card-bar{height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
 .card-body{padding:40px 44px 44px;}
-
-/* Header */
 .card-header{margin-bottom:30px;}
 .card-header h2{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.5px;color:#fff;margin-bottom:6px;}
 .card-header p{font-size:13.5px;color:var(--muted-light);line-height:1.55;}
-
-/* Fields */
 .field{margin-bottom:18px;}
-.field label{
-  display:block;font-size:11.5px;font-weight:700;
-  letter-spacing:.07em;text-transform:uppercase;
-  color:#5a6880;margin-bottom:8px;
-}
-.field input[type=text],
-.field input[type=email],
-.field input[type=password]{
-  width:100%;padding:12px 15px;
-  border-radius:var(--radius);
-  border:1px solid var(--border);
-  background:var(--input-bg);
-  color:white;font-family:'DM Sans',sans-serif;font-size:14.5px;
-  transition:border-color .18s, box-shadow .18s;outline:none;
-}
+.field label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#5a6880;margin-bottom:8px;}
+.field input[type=text],.field input[type=email],.field input[type=password]{width:100%;padding:12px 15px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:white;font-family:'DM Sans',sans-serif;font-size:14.5px;transition:border-color .18s,box-shadow .18s;outline:none;}
 .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
 .field input::placeholder{color:#252c3d;}
 .field .hint{font-size:11.5px;color:var(--muted);margin-top:6px;}
-
-/* Upload */
-.upload-box{
-  position:relative;
-  border:1.5px dashed var(--border);
-  border-radius:var(--radius);
-  padding:20px;text-align:center;cursor:pointer;
-  transition:border-color .2s, background .2s;
-  background:var(--input-bg);
-}
+.upload-box{position:relative;border:1.5px dashed var(--border);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:var(--input-bg);}
 .upload-box:hover{border-color:#2e3a52;background:#0a0d14;}
 .upload-box input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 .upload-icon{font-size:22px;margin-bottom:6px;}
 .upload-box span{display:block;font-size:13px;color:#3a4358;}
 .upload-box strong{color:var(--muted-light);font-weight:600;}
 #pfpName{margin-top:8px;font-size:12px;color:var(--accent);min-height:16px;}
-
-/* Divider */
 .divider{height:1px;background:var(--border);margin:24px 0;}
-
-/* Terms */
-.terms-block{
-  background:rgba(255,249,62,.03);
-  border:1px solid rgba(255,249,62,.1);
-  border-radius:var(--radius);
-  padding:20px 22px;margin-bottom:20px;
-}
+.terms-block{background:rgba(255,249,62,.03);border:1px solid rgba(255,249,62,.1);border-radius:var(--radius);padding:20px 22px;margin-bottom:20px;}
 .terms-header{display:flex;align-items:center;gap:9px;margin-bottom:14px;}
-.terms-header img{height:17px;object-fit:contain;opacity:.8;}
 .terms-header span{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#3d4860;}
-.terms-scroll{
-  max-height:110px;overflow-y:auto;
-  font-size:12.5px;color:var(--muted);
-  line-height:1.75;margin-bottom:16px;padding-right:6px;
-  scrollbar-width:thin;scrollbar-color:#1a2030 transparent;
-}
+.terms-scroll{max-height:110px;overflow-y:auto;font-size:12.5px;color:var(--muted);line-height:1.75;margin-bottom:16px;padding-right:6px;scrollbar-width:thin;scrollbar-color:#1a2030 transparent;}
 .terms-scroll::-webkit-scrollbar{width:3px;}
 .terms-scroll::-webkit-scrollbar-thumb{background:#1a2030;border-radius:3px;}
-.terms-scroll h4{
-  font-size:10.5px;font-weight:700;letter-spacing:.09em;
-  text-transform:uppercase;color:#333d52;margin:10px 0 4px;
-}
+.terms-scroll h4{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#333d52;margin:10px 0 4px;}
 .terms-scroll h4:first-child{margin-top:0;}
 .terms-checkbox{display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;}
 .terms-checkbox input[type=checkbox]{display:none;}
-.checkbox-box{
-  width:20px;height:20px;min-width:20px;border-radius:6px;
-  border:1.5px solid #252e42;background:var(--input-bg);
-  display:flex;align-items:center;justify-content:center;transition:all .15s;
-}
+.checkbox-box{width:20px;height:20px;min-width:20px;border-radius:6px;border:1.5px solid #252e42;background:var(--input-bg);display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .terms-checkbox input:checked + .checkbox-box{background:var(--accent);border-color:var(--accent);}
 .checkmark{display:none;width:11px;height:11px;}
 .terms-checkbox input:checked + .checkbox-box .checkmark{display:block;}
 .terms-checkbox span{font-size:13px;color:var(--muted-light);line-height:1.45;}
 .terms-checkbox span a{color:var(--accent);text-decoration:none;font-weight:600;}
 .terms-checkbox span a:hover{text-decoration:underline;}
-
-/* Error */
 .error{font-size:12.5px;color:#f87171;margin-bottom:14px;min-height:18px;display:flex;align-items:center;gap:7px;}
 .error:not(:empty)::before{content:"⚠";font-size:12px;}
-
-/* Button */
-.btn-primary{
-  width:100%;padding:14px;background:var(--accent);color:#080a0f;
-  border:none;border-radius:var(--radius);
-  font-family:'Syne',sans-serif;font-size:15px;font-weight:700;
-  letter-spacing:.02em;cursor:pointer;
-  transition:box-shadow .2s, transform .1s, filter .15s;margin-top:4px;
-}
-.btn-primary:hover{box-shadow:0 0 30px var(--accent-glow);filter:brightness(1.05);}
-.btn-primary:active{transform:scale(.98);}
-
+.field-error{font-size:12px;color:#f87171;margin-top:5px;min-height:16px;}
+.btn-primary{width:100%;padding:14px;background:var(--accent);color:#080a0f;border:none;border-radius:var(--radius);font-family:'Syne',sans-serif;font-size:15px;font-weight:700;letter-spacing:.02em;cursor:pointer;transition:box-shadow .2s,transform .1s,filter .15s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-primary:hover:not(:disabled){box-shadow:0 0 30px var(--accent-glow);filter:brightness(1.05);}
+.btn-primary:active:not(:disabled){transform:scale(.98);}
+.btn-primary:disabled{opacity:.65;cursor:not-allowed;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:15px;height:15px;border:2px solid rgba(8,10,15,.25);border-top-color:#080a0f;border-radius:50%;animation:spin .6s linear infinite;display:none;flex-shrink:0;}
+.loading .spinner{display:block;}
+.loading .btn-label{display:none;}
 .card-footer{text-align:center;margin-top:22px;font-size:13px;color:var(--muted);}
 .card-footer a{color:var(--accent);text-decoration:none;font-weight:600;}
 .card-footer a:hover{text-decoration:underline;}
@@ -162,7 +68,6 @@ body::before{
 <div class="card">
   <div class="card-bar"></div>
   <div class="card-body">
-
     <div class="card-header">
       <h2>Create your account</h2>
       <p>Join the fortress. Your journey starts here.</p>
@@ -170,19 +75,19 @@ body::before{
 
     <div class="field">
       <label>Email address</label>
-      <input type="email" id="email" placeholder="you@example.com">
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
     </div>
 
     <div class="field">
       <label>Username</label>
-      <input type="text" id="username" placeholder="Choose a unique handle">
-      <div id="userError" class="error"></div>
+      <input type="text" id="username" placeholder="Choose a unique handle" autocomplete="username">
+      <div id="userError" class="field-error"></div>
     </div>
 
     <div class="field">
       <label>Password</label>
-      <input type="password" id="password" placeholder="••••••••••">
-      <div class="hint">At least 8 characters recommended.</div>
+      <input type="password" id="password" placeholder="••••••••••" autocomplete="new-password">
+      <div class="hint">At least 6 characters.</div>
     </div>
 
     <div class="field">
@@ -200,14 +105,13 @@ body::before{
 
     <div class="terms-block">
       <div class="terms-header">
-        <img src="FortizedSecurity logo.png" alt="Security">
-        <span>Your Data is Protected</span>
+        <span>🛡️ Your Data is Protected</span>
       </div>
       <div class="terms-scroll">
         <h4>Terms of Use</h4>
         By using Fortized you agree to use the platform respectfully and lawfully. You may not use Fortized to harass, impersonate, or harm other users. Accounts found in violation may be suspended or permanently banned without notice.
         <h4>Privacy &amp; Data</h4>
-        Your data is stored locally on your device. Fortized does not transmit personal information to external servers. Profile pictures and account details are saved in your browser's local storage.
+        Your data is stored in Firebase (Google Cloud). Fortized does not sell personal information. Profile pictures and account details are stored securely in the cloud database.
         <h4>Community Standards</h4>
         All users are expected to maintain a respectful environment. Hate speech, threats, and spam are strictly prohibited. Fortized reserves the right to remove content that violates these standards.
         <h4>Changes to Terms</h4>
@@ -220,78 +124,114 @@ body::before{
             <path d="M2 6l3 3 5-5" stroke="#080a0f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
-        <span>I have read and agree to the <a href="terms.html" target="_blank">Terms of Use</a> and <a href="privacy.html" target="_blank">Privacy Policy</a></span>
+        <span>I have read and agree to the Terms of Use and Privacy Policy</span>
       </label>
     </div>
 
     <div id="error" class="error"></div>
 
-    <button class="btn-primary" id="signupBtn">Create Account →</button>
+    <button class="btn-primary" id="signupBtn">
+      <div class="spinner"></div>
+      <span class="btn-label">Create Account →</span>
+    </button>
 
-    <div class="card-footer">
-      Already have an account? <a href="login.html">Sign in</a>
-    </div>
-
+    <div class="card-footer">Already have an account? <a href="login.html">Sign in</a></div>
   </div>
 </div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="FortizedSocial-firebase.js"></script>
 <script>
-const signupBtn = document.getElementById("signupBtn");
-const emailInput    = document.getElementById("email");
-const usernameInput = document.getElementById("username");
-const passwordInput = document.getElementById("password");
-const termsCheckbox = document.getElementById("terms");
-const pfpInput      = document.getElementById("pfp");
-const errorDiv      = document.getElementById("error");
-const userErrorDiv  = document.getElementById("userError");
-const pfpName       = document.getElementById("pfpName");
+const signupBtn     = document.getElementById('signupBtn');
+const emailInput    = document.getElementById('email');
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
+const termsCheckbox = document.getElementById('terms');
+const pfpInput      = document.getElementById('pfp');
+const errorDiv      = document.getElementById('error');
+const userErrorDiv  = document.getElementById('userError');
+const pfpName       = document.getElementById('pfpName');
 
-pfpInput.addEventListener("change", () => {
-  if (pfpInput.files[0]) pfpName.textContent = "✓ " + pfpInput.files[0].name;
+pfpInput.addEventListener('change', () => {
+  const file = pfpInput.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    pfpName.textContent = '⚠ File too large (max 5MB)';
+    pfpName.style.color = '#f87171';
+    pfpInput.value = '';
+    return;
+  }
+  pfpName.textContent = '✓ ' + file.name;
+  pfpName.style.color = '';
 });
 
-signupBtn.addEventListener("click", async () => {
+signupBtn.addEventListener('click', doSignup);
+[emailInput, usernameInput, passwordInput].forEach(el =>
+  el.addEventListener('keydown', e => { if (e.key === 'Enter') doSignup(); })
+);
+
+async function doSignup() {
   const email    = emailInput.value.trim();
   const username = usernameInput.value.trim();
   const password = passwordInput.value;
   const terms    = termsCheckbox.checked;
-  errorDiv.textContent = ""; userErrorDiv.textContent = "";
 
-  if (!email || !username || !password) { errorDiv.textContent = "All fields are required."; return; }
-  if (!terms) { errorDiv.textContent = "You must accept the terms to continue."; return; }
+  errorDiv.textContent = '';
+  userErrorDiv.textContent = '';
 
-  signupBtn.textContent = "Creating…";
-  signupBtn.style.opacity = ".7";
-  signupBtn.style.pointerEvents = "none";
+  if (!email || !username || !password) { errorDiv.textContent = 'All fields are required.'; return; }
+  if (!terms) { errorDiv.textContent = 'You must accept the terms to continue.'; return; }
 
-  const result = await FortizedSocial.register(username, password, email);
-  if (!result.ok) {
-    userErrorDiv.textContent = result.msg;
-    signupBtn.textContent = "Create Account →";
-    signupBtn.style.opacity = ""; signupBtn.style.pointerEvents = "";
-    return;
-  }
+  setLoading(true);
 
-  // Handle optional profile picture
-  const file = pfpInput.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      await FortizedSocial.saveUserObject({ ...result.user, pfp: e.target.result });
-      FortizedSocial.setCurrentUsername ? FortizedSocial.getCurrentUsername() : null;
+  try {
+    const result = await FortizedSocial.register(username, password, email);
+    if (!result.ok) {
+      userErrorDiv.textContent = result.msg;
+      setLoading(false);
+      return;
+    }
+
+    // Handle optional profile picture
+    const file = pfpInput.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const updatedUser = { ...result.user, pfp: e.target.result };
+          await FortizedSocial.saveUserObject(updatedUser);
+        } catch (err) {
+          console.error('PFP save error:', err);
+          // Non-fatal — continue to app anyway
+        }
+        localStorage.setItem('ftz_current', username);
+        localStorage.setItem('fortized_current_user', username);
+        window.location.href = 'app.html';
+      };
+      reader.onerror = () => {
+        // PFP failed to read — still proceed
+        localStorage.setItem('ftz_current', username);
+        localStorage.setItem('fortized_current_user', username);
+        window.location.href = 'app.html';
+      };
+      reader.readAsDataURL(file);
+    } else {
       localStorage.setItem('ftz_current', username);
       localStorage.setItem('fortized_current_user', username);
-      window.location.href = "app.html";
-    };
-    reader.readAsDataURL(file);
-  } else {
-    localStorage.setItem('ftz_current', username);
-    localStorage.setItem('fortized_current_user', username);
-    window.location.href = "app.html";
+      window.location.href = 'app.html';
+    }
+  } catch (err) {
+    console.error('Signup error:', err);
+    errorDiv.textContent = 'Connection error. Check your internet and try again.';
+    setLoading(false);
   }
-});
+}
+
+function setLoading(on) {
+  signupBtn.disabled = on;
+  signupBtn.classList.toggle('loading', on);
+}
 </script>
 </body>
 </html>
