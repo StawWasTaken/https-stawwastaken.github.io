@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Privacy Policy — Fortized</title>
+<link rel="icon" type="image/png" href="Fortized icon2.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -24,8 +25,6 @@ body{background:var(--bg);color:#fff;font-family:'DM Sans',sans-serif;min-height
 ::-webkit-scrollbar{width:5px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:#1e2535;border-radius:10px;}
-
-/* NAV */
 nav{
   position:sticky;top:0;z-index:100;
   display:flex;justify-content:space-between;align-items:center;
@@ -44,14 +43,11 @@ nav{
   transition:color .15s, background .15s;
 }
 .nav-back:hover{color:#fff;background:rgba(255,255,255,.05);}
-
-/* PAGE HERO */
 .page-hero{
   padding:88px 72px 64px;
   position:relative;overflow:hidden;
   border-bottom:1px solid var(--border);
 }
-/* Banner bg tinted */
 .page-hero::before{
   content:"";position:absolute;inset:0;
   background:
@@ -59,7 +55,6 @@ nav{
     url("Fortized banner.png") center / cover no-repeat;
   z-index:0;
 }
-/* Grid texture */
 .page-hero::after{
   content:"";position:absolute;inset:0;z-index:0;
   background-image:
@@ -90,8 +85,6 @@ nav{
   border:1px solid var(--border);
   border-radius:8px;padding:6px 12px;
 }
-
-/* CONTENT */
 .content-wrap{max-width:780px;margin:0 auto;padding:80px 72px 110px;}
 .section-block{margin-bottom:56px;}
 .section-block h2{
@@ -128,8 +121,6 @@ nav{
 .item-list li:hover{border-color:rgba(255,249,62,.12);background:rgba(255,249,62,.03);}
 .item-list li::before{content:"✦";color:var(--accent);font-size:10px;flex-shrink:0;margin-top:4px;}
 .divider{height:1px;background:var(--border);margin:56px 0;}
-
-/* FOOTER */
 footer{
   border-top:1px solid var(--border);padding:32px 72px;
   display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:20px;
