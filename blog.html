@@ -720,13 +720,17 @@ function renderArticle(id) {
 
 function openArticle(id) {
   if (!ARTICLES[id]) return;
-  history.pushState({ articleId: id }, '', `/article/${id}`);
+  const url = new URL(window.location.href);
+  url.searchParams.set('article', id);
+  history.pushState({ articleId: id }, '', url.toString());
   renderArticle(id);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function closeArticle() {
-  history.pushState({ articleId: null }, '', '/blog');
+  const url = new URL(window.location.href);
+  url.searchParams.delete('article');
+  history.pushState({ articleId: null }, '', url.toString());
   document.getElementById('blog-list-view').classList.remove('hidden');
   document.getElementById('article-view').classList.remove('open');
   document.title = 'Fortized Blog';
@@ -735,26 +739,24 @@ function closeArticle() {
 
 /* Handle browser back/forward */
 window.addEventListener('popstate', function(e) {
-  if (e.state && e.state.articleId) {
-    renderArticle(e.state.articleId);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const id = e.state && e.state.articleId;
+  if (id && ARTICLES[id]) {
+    renderArticle(id);
   } else {
     document.getElementById('blog-list-view').classList.remove('hidden');
     document.getElementById('article-view').classList.remove('open');
     document.title = 'Fortized Blog';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-/* Handle direct URL load e.g. /article/whatisfortized */
+/* Handle direct URL load e.g. blog.html?article=whatisfortized */
 (function() {
-  const match = window.location.pathname.match(/^\/article\/([^/]+)/);
-  if (match) {
-    const id = match[1];
-    if (ARTICLES[id]) {
-      renderArticle(id);
-      history.replaceState({ articleId: id }, '', `/article/${id}`);
-    }
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('article');
+  if (id && ARTICLES[id]) {
+    renderArticle(id);
+    history.replaceState({ articleId: id }, '', window.location.href);
   }
 })();
 </script>
