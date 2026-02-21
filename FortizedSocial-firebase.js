@@ -12,7 +12,7 @@ const firebaseConfig = {
 const FortizedSocial = (() => {
 
   // ── Firebase init ──────────────────────────────────────────
-  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig); // FIXED: was FIREBASE_CONFIG
   const db = firebase.database();
 
   // ── DB path helpers ────────────────────────────────────────
@@ -50,7 +50,7 @@ const FortizedSocial = (() => {
     return db.ref(path).transaction(fn);
   }
 
-  // ── Session (stays local — just "who am I right now") ──────
+  // ── Session ────────────────────────────────────────────────
   function getCurrentUsername() {
     return localStorage.getItem('ftz_current') ||
            localStorage.getItem('fortized_current_user') || null;
@@ -108,6 +108,7 @@ const FortizedSocial = (() => {
       createdAt: new Date().toISOString()
     };
     await dbSet(P.user(username), user);
+    setCurrentUsername(username); // FIXED: also set session on register
     return { ok: true, user };
   }
 
@@ -135,7 +136,6 @@ const FortizedSocial = (() => {
 
   async function setStatus(username, status) {
     await dbSet(P.status(username), status);
-    // Also keep in user object for convenience
     await dbUpdate(P.user(username), { status });
   }
 
@@ -143,7 +143,6 @@ const FortizedSocial = (() => {
   async function getNotifications(username) {
     const data = await dbGet(P.notifs(username));
     if (!data) return [];
-    // Firebase objects → sorted array (newest first)
     return Object.values(data).sort((a, b) =>
       new Date(b.time) - new Date(a.time)
     );
@@ -180,14 +179,13 @@ const FortizedSocial = (() => {
     if (!fu) return { ok: false, msg: 'Your account not found.' };
     if (!tu) return { ok: false, msg: 'User not found.' };
 
-    const friends           = fu.friends           || [];
-    const sentReqs          = fu.friendRequestsSent || [];
-    const theirSentReqs     = tu.friendRequestsSent || [];
+    const friends       = fu.friends           || [];
+    const sentReqs      = fu.friendRequestsSent || [];
+    const theirSentReqs = tu.friendRequestsSent || [];
 
-    if (friends.includes(toUsername)) return { ok: false, msg: 'Already friends.' };
-    if (sentReqs.includes(toUsername)) return { ok: false, msg: 'Request already sent.' };
+    if (friends.includes(toUsername))    return { ok: false, msg: 'Already friends.' };
+    if (sentReqs.includes(toUsername))   return { ok: false, msg: 'Request already sent.' };
 
-    // Auto-accept if they already sent us one
     if (theirSentReqs.includes(fromUsername)) {
       return acceptFriendRequest(fromUsername, toUsername);
     }
@@ -233,7 +231,6 @@ const FortizedSocial = (() => {
     return { ok: true, msg: `You are now friends with ${fromUsername}!` };
   }
 
-  // alias
   const acceptFriend = acceptFriendRequest;
 
   async function declineFriendRequest(myUsername, fromUsername) {
@@ -283,10 +280,8 @@ const FortizedSocial = (() => {
       timestamp: now.toISOString()
     };
 
-    // Save message
     await dbSet(`${P.dm(fromUsername, toUsername)}/${msg.id}`, msg);
 
-    // Update DM index for both users
     const [myIdx, theirIdx] = await Promise.all([
       dbGet(P.dmIndex(fromUsername)),
       dbGet(P.dmIndex(toUsername))
@@ -347,11 +342,11 @@ const FortizedSocial = (() => {
       const idx = arr.indexOf(username);
       if (idx !== -1) arr.splice(idx, 1);
       else arr.push(username);
-      return arr.length ? arr : null; // null removes the node
+      return arr.length ? arr : null;
     });
   }
 
-  // ── Global Bastions Registry ───────────────────────────────
+  // ── Global Bastions ────────────────────────────────────────
   async function getGlobalBastions() {
     return (await dbGet(P.globalBastions)) || {};
   }
@@ -395,40 +390,34 @@ const FortizedSocial = (() => {
     await dbTransaction(P.invite(code) + '/uses', n => (n || 0) + 1);
   }
 
-  // ── Real-time Polling / Listeners ─────────────────────────
-  let _listeners = [];  // { ref, handler } to unsubscribe
+  // ── Real-time Listeners ────────────────────────────────────
+  let _listeners = [];
   let _callbacks = {};
 
   function startPolling(username, callbacks = {}) {
     _callbacks = callbacks;
-    stopPolling(); // clean up any existing listeners
+    stopPolling();
 
-    // 1. Notifications — fires whenever a new notif is added
     const notifRef = db.ref(P.notifs(username));
     const notifHandler = notifRef.on('child_added', snap => {
       const n = snap.val();
-      if (!n || n.read) return; // skip already-read on first load
+      if (!n || n.read) return;
       _callbacks.onNewNotification?.(n);
       updateNotifBadgeExternal(username);
     });
     _listeners.push({ ref: notifRef, event: 'child_added', handler: notifHandler });
 
-    // 2. DMs — fires when a new message arrives addressed to this user
     const dmIndexRef = db.ref(P.dmIndex(username));
     const dmIndexHandler = dmIndexRef.on('value', snap => {
-      // Re-build the sidebar DM list (calls app.html's buildDMItems equivalent)
       _callbacks.onDMIndexChange?.();
     });
     _listeners.push({ ref: dmIndexRef, event: 'value', handler: dmIndexHandler });
 
-    // 3. Status changes of friends
     const statusRef = db.ref('statuses');
     const statusHandler = statusRef.on('child_changed', snap => {
       _callbacks.onStatusChange?.({ username: snap.key, status: snap.val() });
     });
     _listeners.push({ ref: statusRef, event: 'child_changed', handler: statusHandler });
-
-    // Bastion message listener is set up per-channel (see listenBastionChannel below)
   }
 
   function stopPolling() {
@@ -438,10 +427,6 @@ const FortizedSocial = (() => {
     _listeners = [];
   }
 
-  /**
-   * Call this when entering a bastion channel to get real-time messages.
-   * Returns an unsubscribe function — call it when leaving the channel.
-   */
   function listenBastionChannel(bastionId, channelId, callback) {
     const ref = db.ref(P.bastionMsgs(bastionId, channelId));
     const handler = ref.on('child_added', snap => {
@@ -450,10 +435,6 @@ const FortizedSocial = (() => {
     return () => ref.off('child_added', handler);
   }
 
-  /**
-   * Real-time listener for a single DM thread.
-   * Returns an unsubscribe function.
-   */
   function listenDM(user1, user2, callback) {
     const ref = db.ref(P.dm(user1, user2));
     const handler = ref.on('child_added', snap => {
@@ -462,14 +443,13 @@ const FortizedSocial = (() => {
     return () => ref.off('child_added', handler);
   }
 
-  // ── Badge helper (calls app.html's updateNotifBadge if it exists) ──
   async function updateNotifBadgeExternal(username) {
     if (typeof window !== 'undefined' && typeof window.updateNotifBadge === 'function') {
       window.updateNotifBadge();
     }
   }
 
-  // ── Audio ───────────────────────────────────────────────────
+  // ── Audio ──────────────────────────────────────────────────
   function playNotificationSound() {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -487,51 +467,18 @@ const FortizedSocial = (() => {
   }
 
   // ── Public API ─────────────────────────────────────────────
-  // NOTE: All async functions return Promises.
-  // app.html already calls most of these synchronously and reads .ok / .msg
-  // directly — that still works because JavaScript doesn't throw on
-  // unhandled promise returns; BUT for proper UX you should await them.
-  // The compatibility shim below makes sync-looking code work by returning
-  // a Promise that app.html can optionally await.
-
   return {
-    // Auth
     register, login, logout, getCurrentUsername,
-
-    // Users
     getUsers, getUserByName, saveUserObject,
-
-    // Status
     getStatus, setStatus,
-
-    // Notifications
     getNotifications, addNotification, markNotificationsRead, getUnreadCount,
-
-    // Friends
-    sendFriendRequest,
-    acceptFriendRequest,
-    acceptFriend,
-    declineFriendRequest,
-    removeFriend,
-
-    // DMs
+    sendFriendRequest, acceptFriendRequest, acceptFriend, declineFriendRequest, removeFriend,
     getDMMessages, sendDMMessage, getRecentDMPartners,
-
-    // Bastion messages
     getBastionChannelMessages, sendBastionChannelMessage, addReaction,
-
-    // Global bastions & members
     getGlobalBastions, saveGlobalBastion, getGlobalBastion,
     getBastionMembers, addBastionMember, removeBastionMember,
-
-    // Invites
     getInvite, saveInvite, incrementInviteUses,
-
-    // Real-time
-    startPolling, stopPolling,
-    listenBastionChannel, listenDM,
-
-    // Utils
+    startPolling, stopPolling, listenBastionChannel, listenDM,
     playNotificationSound,
   };
 
