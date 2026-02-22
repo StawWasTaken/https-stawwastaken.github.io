@@ -1984,21 +1984,11 @@ function updateDOBField(){
 })();
 
 
-  if (!CU?.username) return;
-  // FortizedSocial stores just the username string — keep that
-  localStorage.setItem('ftz_current', CU.username);
-  localStorage.setItem('fortized_current_user', CU.username);
-  // We store the full object under a separate key for instant loads
-  localStorage.setItem('ftz_user_' + CU.username, JSON.stringify(CU));
-}
-
 
 
 
 
 // ── Admin helpers ────────────────────────────────────────────
-
-
 
 ','🌺','🦋','🐉','🦅','🎭','🎯','🧩','⚡'],
     emojis2 = emojis;
@@ -2818,7 +2808,6 @@ async function doLogout() {
 // SEARCH
 // ════════════════════════════════════════════
 
-
 // ════════════════════════════════════════════
 // CONTEXT MENU
 // ════════════════════════════════════════════
@@ -2913,15 +2902,9 @@ document.addEventListener('click',e=>{if(e.target.classList.contains('modal-over
 // ════════════════════════════════════════════
 let toastTimer=null;
 
-
 // ════════════════════════════════════════════
 // UTILS
 // ════════════════════════════════════════════
-
-
-
-
-
 function hasPerm(perm){
   if(!CU||curBastion===null)return false;
   const b=CU.bastions[curBastion];if(!b)return false;
@@ -2929,7 +2912,6 @@ function hasPerm(perm){
   const memberRoles=(b.memberRoles||{})[CU.username]||[];
   return memberRoles.some(rid=>(b.roles||[]).find(r=>r.id===rid)?.permissions?.includes(perm));
 }
-
 
 
 
@@ -3135,11 +3117,6 @@ function tryOpenAdmin() {
   });
 }
 
-function isSuperAdmin() { return CU.username === SUPER_ADMIN; }
-function isAdmin() {
-  const admins = JSON.parse(localStorage.getItem('ftz_admins') || '["staw"]');
-  return admins.includes(CU.username);
-}
 
 function openAdminPanel() {
   // Create fullscreen admin overlay
@@ -3523,7 +3500,6 @@ function adjustOnyx(direction) {
 }
 
 
-
 async function adminSearchBastion() {
   const q = document.getElementById('admin-bastion-search')?.value?.trim();
   if (!q) return;
@@ -3637,9 +3613,6 @@ async function completeVerification() {
 
 
 
-
-
-
 // ════════════════════════════════════════════
 // DATE OF BIRTH CAPTURE (first-time setup)
 // ════════════════════════════════════════════
@@ -3726,206 +3699,16 @@ function simulateAIScan(fileData, fileName, uploader) {
 
 // Hook into profile picture upload to scan
 const _origUpdatePfp = window.updatePfp;
-async function updatePfp(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > 2*1024*1024) { toast('Max 2MB', 'error'); return; }
-  const r = new FileReader();
-  r.onload = async ev => {
-    const result = simulateAIScan(ev.target.result, file.name, CU.username);
-    if (result.flagged && (result.label === 'EXPLICIT' || result.label === 'EXTREME')) {
-      toast('⚠️ Upload blocked — content flagged for review.', 'error');
-      return;
-    }
-    if (result.flagged) {
-      toast('⚠️ Upload under review. It may take a moment to appear.', 'info');
-    }
-    CU.pfp = ev.target.result;
-    await saveUser();
-    updateUserbar();
-    buildProfileView('myprofile');
-    toast('Avatar updated!', 'success');
-  };
-  r.readAsDataURL(file);
-}
+
 
 // ════════════════════════════════════════════
 // BASTION SIDEBAR WITH CHANNEL CLICK
 // ════════════════════════════════════════════
 
 
-
-
 // ════════════════════════════════════════════
 // APP INIT
 // ════════════════════════════════════════════
-(async function appInit() {
-  // Wait for DOM
-  if (document.readyState === 'loading') {
-    await new Promise(r => document.addEventListener('DOMContentLoaded', r));
-  }
-
-  // ─── Step 1: Get username from localStorage (FortizedSocial stores just the string) ───
-  let username = localStorage.getItem('ftz_current') || localStorage.getItem('fortized_current_user');
-  if (!username) { window.location.href = 'login.html'; return; }
-
-  // FortizedSocial.setCurrentUsername stores a plain string — handle both cases
-  // (old app.html stored full JSON object, new firebase lib stores just username string)
-  if (username.startsWith('{')) {
-    try { username = JSON.parse(username).username; } catch {}
-  }
-  // Strip any surrounding quotes
-  username = username.replace(/^["']|["']$/g, '').trim();
-  if (!username) { window.location.href = 'login.html'; return; }
-
-  // ─── Step 2: Check for a cached full user object (key: ftz_user_<username>) ───
-  const cachedRaw = localStorage.getItem('ftz_user_' + username);
-  if (cachedRaw) {
-    try {
-      CU = JSON.parse(cachedRaw);
-    } catch { CU = null; }
-  }
-
-  // ─── Step 3: If no cache, MUST fetch from Firebase (first load after login) ───
-  // Show a fast spinner during this one-time fetch only
-  if (!CU || !CU.username) {
-    const loader = document.getElementById('app-loading');
-    const lbl = loader?.querySelector('.lbl');
-    if (lbl) lbl.textContent = 'Signing you in…';
-
-    try {
-      CU = await Promise.race([
-        FortizedSocial.getUserByName(username),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
-      ]);
-    } catch { CU = null; }
-
-    if (!CU || !CU.username) {
-      // Firebase failed — redirect to login
-      localStorage.removeItem('ftz_current');
-      localStorage.removeItem('fortized_current_user');
-      window.location.href = 'login.html';
-      return;
-    }
-    // Cache the full object so next load is instant
-    localStorage.setItem('ftz_user_' + username, JSON.stringify(CU));
-  }
-
-  // Apply defaults
-  if (!CU.bastions) CU.bastions = [];
-  if (!CU.friends) CU.friends = [];
-  if (CU.onyx === undefined) CU.onyx = 0;
-  notifSettings = CU.notifSettings || notifSettings;
-
-  updateUserbar();
-  renderRailBastions();
-
-  // ─── Step 4: Hide loading screen ───
-  const loader = document.getElementById('app-loading');
-  if (loader) loader.style.display = 'none';
-
-  // ─── Step 5: Silently refresh from Firebase IN THE BACKGROUND ───
-  // Next page load will use the refreshed cache — zero UI blocking
-  setTimeout(async () => {
-    try {
-      const fresh = await Promise.race([
-        FortizedSocial.getUserByName(username),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))
-      ]);
-      if (fresh && fresh.username) {
-        CU = fresh;
-        // Update cache for next instant load
-        localStorage.setItem('ftz_user_' + username, JSON.stringify(CU));
-        updateUserbar();
-        renderRailBastions();
-        updateOnyxDisplay();
-      }
-    } catch { /* silent — cached data is still valid */ }
-  }, 0);
-
-  showView('home');
-  updateNotifBadge();
-
-  // Inject admin button if user is an admin (hidden from non-admins)
-  setTimeout(() => {
-    if (isAdmin()) {
-      const rail = document.getElementById('rail');
-      if (rail && !document.getElementById('admin-rail-btn')) {
-        const adminBtn = document.createElement('div');
-        adminBtn.id = 'admin-rail-btn';
-        adminBtn.className = 'rail-btn';
-        adminBtn.innerHTML = '🛡️';
-        adminBtn.dataset.tip = 'Admin Panel';
-        adminBtn.style.cssText = 'border:1px solid rgba(248,113,113,.3);color:var(--red);margin-top:4px;';
-        adminBtn.onclick = tryOpenAdmin;
-        const profileBtn = rail.querySelector('#rb-profile');
-        if (profileBtn) rail.insertBefore(adminBtn, profileBtn);
-        else rail.appendChild(adminBtn);
-      }
-    }
-  }, 600);
-
-  // Show verification quiz if not verified
-  if (!CU.verified) {
-    setTimeout(showVerifyQuiz, 400);
-  }
-  // Show DOB setup if no date of birth
-  else if (!CU.dateOfBirth) {
-    setTimeout(showDOBSetup, 800);
-  }
-
-  // Check invite URL params
-  try { checkInviteLink(); } catch {}
-
-  // Block browser right-click globally
-  document.addEventListener('contextmenu', e => {
-    e.preventDefault();
-    handleContextMenu(e);
-  });
-
-  // Close context menu and panels on click
-  document.addEventListener('click', e => {
-    const menu = document.getElementById('ctx-menu');
-    if (menu && !menu.contains(e.target)) menu.style.display = 'none';
-    const np = document.getElementById('notif-panel');
-    if (notifPanelOpen && np && !np.contains(e.target) && e.target.id !== 'rb-notifs') {
-      notifPanelOpen = false;
-      np.classList.remove('open');
-    }
-    const ep = document.getElementById('emoji-picker');
-    if (ep && ep.classList.contains('show') && !ep.contains(e.target) &&
-        !['emoji-btn-dm','emoji-btn-ch'].includes(e.target.id)) {
-      ep.classList.remove('show');
-    }
-  });
-
-  // Close modals on overlay click
-  document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', e => {
-      if (e.target === overlay) overlay.classList.remove('open');
-    });
-  });
-
-  // Poll for notifications every 30s
-  setInterval(async () => { try { await updateNotifBadge(); } catch {} }, 30000);
-
-})();
-
-// ════════════════════════════════════════════
-// ADMIN PANEL KEYBOARD SHORTCUT
-// ════════════════════════════════════════════
-// Accessible via rail button (hidden, only shown to admins)
-document.addEventListener('keydown', e => {
-  if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-    tryOpenAdmin();
-  }
-});
-
-// Add admin button to rail if user is admin
-// Admin rail button is injected by appInit after user loads
-
-
-
 
 </script>
 </body>
