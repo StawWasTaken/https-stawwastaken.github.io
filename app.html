@@ -1842,10 +1842,7 @@ async function promptJoinPublicBastion(bastionId){
 // MISC MISSING
 // ════════════════════════════════════════════
 function pickCBEmoji(){
-  const emojis=['🏰','⚔️','🛡️','🔮','🏹','🌟','🔥','❄️','🌊','⛩️','🎮','🎨','🎵','🎭','🎯','🧩','⚡','🌺','🦋','🐉','🦅','🌈','🦁','🐺','🦊','🎪','🚀','💫','🌙','☀️'];
-  const x=event?.clientX||window.innerWidth/2, y=event?.clientY||window.innerHeight/2;
-  showCtxMenu(x,y,emojis.map(e=>({icon:e,label:e,action:()=>selectCBEmoji(e)})));
-}
+  const emojis=['🏰','⚔️','🛡️','🔮','🏹','🌟','🔥','❄️','🌊','⛩️','🎮','🎨','🎵','🎭','🎯','🧩','⚡
 function setCBVis(v,btn){
   cbVisibility=v;
   document.querySelectorAll('.vis-btn').forEach(b=>b.classList.remove('active'));
@@ -1882,6 +1879,9 @@ function updateDOBField(){
 // APP INIT
 // ════════════════════════════════════════════
 (async function appInit(){
+  const _sl=document.getElementById('app-loading');
+  const _st=setTimeout(()=>{if(_sl)_sl.style.display='none';},8000);
+  try{
   if (document.readyState==='loading') await new Promise(r=>document.addEventListener('DOMContentLoaded',r));
 
   // Get username — FortizedSocial stores plain string
@@ -1981,6 +1981,8 @@ function updateDOBField(){
   },1000);
 
   setInterval(async()=>{try{await updateNotifBadge();}catch{}},30000);
+  clearTimeout(_st);
+  }catch(e){console.error('[Fortized]',e);if(_sl)_sl.style.display='none';clearTimeout(_st);}
 })();
 
 
@@ -1990,11 +1992,6 @@ function updateDOBField(){
 
 // ── Admin helpers ────────────────────────────────────────────
 
-','🌺','🦋','🐉','🦅','🎭','🎯','🧩','⚡'],
-    emojis2 = emojis;
-  const grid = emojis2.map(e=>`<span style="font-size:22px;cursor:pointer;padding:4px;border-radius:8px;" onclick="selectCBEmoji('${e}')">${e}</span>`).join('');
-  showCustomInput('Pick Emoji','Type an emoji or see options below:',val=>{if(val)selectCBEmoji(val);});
-}
 
 function selectCBEmoji(emoji) {
   cbSelectedEmoji = emoji;
@@ -2918,11 +2915,7 @@ function hasPerm(perm){
 
 // AGE PROTECTION SYSTEM
 
-const AGE_TIERS = {
-  CHILD: 'child',       // 13-15
-  TEEN: 'teen',         // 16-17
-  ADULT: 'adult'        // 18+
-};
+
 
 function getAgeTier(dateOfBirth) {
   if (!dateOfBirth) return AGE_TIERS.TEEN; // default to safe
@@ -2995,18 +2988,8 @@ function confirmNSFWView() {
 
 // REPORT SYSTEM
 
-const REPORT_REASONS = [
-  'Harassment',
-  'Hate Speech',
-  'NSFW / Explicit Content',
-  'Spam or Scam',
-  'Threats or Violence',
-  'Self-Harm or Suicide',
-  'Illegal Content',
-  'Other'
-];
 
-let activeReportData = null;
+
 
 function reportMessage(msgId, msgText) {
   activeReportData = { type: 'message', msgId, msgText, reportedAt: new Date().toISOString() };
@@ -3092,9 +3075,6 @@ async function submitReport() {
 
 // Super admin: "staw" (default admin who can add other admins)
 // Access: secret code 1478
-const SUPER_ADMIN = 'staw';
-let adminAuthed = false;
-let adminTab = 'dashboard';
 
 function tryOpenAdmin() {
   if (adminAuthed) {
@@ -3524,9 +3504,6 @@ async function adminSearchBastion() {
 
 // HUMAN VERIFICATION QUIZ
 
-let quizAnswers = [];
-let quizIdx = 0;
-let quizCorrect = 0;
 
 function showVerifyQuiz() {
   const overlay = document.createElement('div');
