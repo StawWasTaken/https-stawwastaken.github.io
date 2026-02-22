@@ -434,7 +434,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
 .boost-bar{background:rgba(255,249,62,.06);border:1px solid rgba(255,249,62,.12);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted-light);cursor:pointer;margin:8px 8px 4px;}
 .boost-bar .bl{font-weight:700;color:var(--accent);}
 </style>
-</head>
 <body>
 <!-- APP LOADING -->
 <div class="app-loading" id="app-loading">
@@ -916,7 +915,1091 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;dis
 </div>
 
 
+
 <script>
+// ════════════════════════════════════════════
+// GLOBAL STATE
+// ════════════════════════════════════════════
+let CU = null;
+let curBastion = null;
+let curChannel = null;
+let curDM = null;
+let voiceConnected = false;
+let voiceChannel = null;
+let voiceParticipants = [];
+let isMuted = false;
+let isDeafened = false;
+let notifPanelOpen = false;
+let notifSettings = {messages:true,friendRequests:true,bastionActivity:true,mentions:true,sounds:true};
+let replyingTo = null;
+let forwardMsgText = '';
+let activeEmojiTarget = null;
+let currentRoleEditing = null;
+let assignRoleBastion = null;
+let assignRoleMemberName = null;
+let cbVisibility = 'public';
+let cbSelectedEmoji = '🏰';
+let cbIconData = null;
+let discoverData = [];
+let discoverTab = 'all';
+let adminAuthed = false;
+let adminTab = 'dashboard';
+let quizIdx = 0;
+let quizCorrect = 0;
+let quizAnswers = [];
+let activeReportData = null;
+const SUPER_ADMIN = 'staw';
+const ROLE_COLORS = ['#fbbf24','#f87171','#34d399','#60a5fa','#a78bfa','#f472b6','#fb923c','#22d3ee'];
+const PERMISSIONS = [
+  ['send_messages','Send Messages'],['read_history','Read History'],
+  ['add_reactions','Add Reactions'],['attach_files','Attach Files'],
+  ['mention_everyone','Mention Everyone'],['manage_messages','Manage Messages'],
+  ['kick_members','Kick Members'],['ban_members','Ban Members'],
+  ['manage_channels','Manage Channels'],['manage_roles','Manage Roles'],
+  ['administrator','Administrator'],
+];
+const EMOJI_CATEGORIES = {
+  '😊 Smileys':['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🥴','😴','🤤','😪','😵','🤯','🤠','🥳','😎','🤓','🧐'],
+  '👍 Gestures':['👍','👎','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👋','🤚','🖐️','✋','🖖','💪','🦾','🙌','👐','🤲','🫶','🙏','✍️','💅'],
+  '❤️ Hearts':['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✨','💫','⭐','🌟','💥','🔥','🎉','🎊','🎈'],
+  '🐶 Animals':['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🦆','🦅','🦉','🦇','🐺','🐗','🦄','🐝','🪲','🦋','🐛','🐌'],
+  '🍕 Food':['🍕','🍔','🍟','🌭','🍿','🧂','🥓','🥚','🍳','🧇','🥞','🧈','🍞','🥐','🥖','🫓','🥨','🧀','🥗','🥙','🌮','🌯','🫔','🥫','🍝','🍜','🍲','🍛','🍣','🍱'],
+  '⚡ Symbols':['⚡','🔥','❄️','🌊','🌪️','🌈','⭐','💫','✨','🎯','🏆','🥇','🎮','🎲','🃏','🎭','🎨','🎵','🎶','🎸','🎹','🎤','🎧','📱','💻','🖥️','⌨️','🖱️','📷','🎬'],
+};
+const QUIZ_QUESTIONS = [
+  {q:"What does 'NSFW' stand for?",a:"Not Safe For Work",opts:["Not Safe For Work","New Software For Web","No Spam For Winners","None So Far Witnessed"]},
+  {q:"Which of these is considered harassment?",a:"Repeatedly messaging someone after they ask you to stop",opts:["Sending a friend request","Sharing a meme","Repeatedly messaging someone after they ask you to stop","Joining a public Bastion"]},
+  {q:"What should you do if you see harmful content?",a:"Report it using the report button",opts:["Ignore it","Share it with friends","Report it using the report button","Delete your account"]},
+  {q:"Fortized's minimum age requirement is:",a:"13 years old",opts:["10 years old","13 years old","16 years old","18 years old"]},
+  {q:"How should you handle disagreements with other users?",a:"Communicate respectfully or use block/report",opts:["Threaten them","Spam their DMs","Communicate respectfully or use block/report","Share their personal info"]},
+];
+const REPORT_REASONS = ['Harassment','Hate Speech','NSFW / Explicit Content','Spam or Scam','Threats or Violence','Self-Harm or Suicide','Illegal Content','Other'];
+const AGE_TIERS = {CHILD:'child',TEEN:'teen',ADULT:'adult'};
+
+// ── Helpers ──────────────────────────────────────────────────
+function saveLocal() {
+  if (!CU?.username) return;
+  localStorage.setItem('ftz_current', CU.username);
+  localStorage.setItem('fortized_current_user', CU.username);
+  localStorage.setItem('ftz_user_' + CU.username, JSON.stringify(CU));
+}
+async function saveUser() {
+  saveLocal();
+  try { await FortizedSocial.saveUserObject(CU); } catch {}
+}
+async function refreshCU() {
+  if (!CU?.username) return;
+  try {
+    const fresh = await Promise.race([
+      FortizedSocial.getUserByName(CU.username),
+      new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),5000))
+    ]);
+    if (fresh?.username) { CU = fresh; saveLocal(); }
+  } catch {}
+}
+function escapeHTML(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function parseMD(s) {
+  return s
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;font-family:monospace;">$1</code>')
+    .replace(/~~(.+?)~~/g,'<s>$1</s>')
+    .replace(/\n/g,'<br>');
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+}
+function scrollBottom(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollTop = el.scrollHeight;
+}
+function formatTimeAgo(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+function handleSearch(q) {}
+function attachFile() { toast('📎 File attachments coming soon!','info'); }
+function isSuperAdmin() { return CU?.username === SUPER_ADMIN; }
+function isAdmin() {
+  const admins = JSON.parse(localStorage.getItem('ftz_admins')||'["staw"]');
+  return CU?.username && admins.includes(CU.username);
+}
+function logAudit(action, target, note='') {
+  const log = JSON.parse(localStorage.getItem('ftz_audit_log')||'[]');
+  log.unshift({action,target,note,by:CU?.username,at:new Date().toISOString()});
+  localStorage.setItem('ftz_audit_log', JSON.stringify(log.slice(0,500)));
+}
+
+// ════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════
+function toast(msg, type='info') {
+  const container = document.getElementById('toast-container') || (() => {
+    const c = document.createElement('div');
+    c.id = 'toast-container';
+    c.style.cssText = 'position:fixed;bottom:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;';
+    document.body.appendChild(c);
+    return c;
+  })();
+  const el = document.createElement('div');
+  const colors = {success:'var(--green)',error:'var(--red)',info:'var(--accent-mid)'};
+  el.style.cssText = `background:var(--panel2);border:1px solid ${colors[type]||colors.info};border-radius:12px;padding:10px 16px;font-size:13.5px;color:var(--text);max-width:320px;box-shadow:0 4px 24px rgba(0,0,0,.4);animation:slideIn .2s ease;`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ════════════════════════════════════════════
+// VIEW MANAGEMENT
+// ════════════════════════════════════════════
+function showView(v) {
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.rail-btn').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.rail-bastion').forEach(el=>el.classList.remove('active'));
+  const vEl = document.getElementById('view-'+v);
+  if (vEl) vEl.classList.add('active');
+  const rBtn = document.getElementById('rb-'+v);
+  if (rBtn) rBtn.classList.add('active');
+  updateTopbar(v);
+  updateSidebar(v);
+}
+
+function updateTopbar(v) {
+  const title = document.getElementById('topbar-title');
+  const desc = document.getElementById('tb-desc');
+  const sep = document.getElementById('tb-sep');
+  if (!title) return;
+  if (sep) sep.style.display = 'none';
+  if (desc) desc.textContent = '';
+  const labels = {home:'🏠 Home',dms:'💬 Messages',friends:'👥 Friends',discover:'🧭 Discover',atelier:'💎 Atelier',profile:'⚙️ Settings',bsettings:'⚙️ Bastion Settings'};
+  if (labels[v]) title.textContent = labels[v];
+  else if (v==='bastion' && curBastion!==null) {
+    const b = CU.bastions?.[curBastion];
+    title.innerHTML = `<span>${b?.emblem||'🏰'}</span> ${escapeHTML(b?.name||'')}`;
+    if (sep) sep.style.display = '';
+    if (desc) desc.textContent = 'Select a channel';
+  }
+  updateOnyxDisplay();
+}
+
+function updateSidebar(v) {
+  const scroll = document.getElementById('sidebar-scroll');
+  const hdrTitle = document.getElementById('sidebar-title');
+  const hdrActs = document.getElementById('sidebar-hdr-actions');
+  if (!scroll) return;
+  if (hdrActs) hdrActs.innerHTML = '';
+  scroll.innerHTML = '';
+
+  if (v==='home') {
+    if (hdrTitle) hdrTitle.textContent = '🏠 Home';
+    const bList = (CU?.bastions||[]).map((b,i)=>`<div class="ch-item" onclick="openBastion(${i})"><span style="font-size:16px;">${b.emblem||'🏰'}</span> ${escapeHTML(b.name)}</div>`).join('');
+    scroll.innerHTML = `
+      <div class="sec-label">Quick Nav</div>
+      <div class="ch-item" onclick="showView('dms')">💬 Messages</div>
+      <div class="ch-item" onclick="showView('friends')">👥 Friends</div>
+      <div class="ch-item" onclick="showView('discover')">🧭 Discover</div>
+      <div class="ch-item" onclick="showView('atelier')">💎 Atelier</div>
+      ${bList?`<div class="sec-label">Your Bastions</div>`+bList:''}`;
+    renderHomePanel();
+  } else if (v==='dms') {
+    if (hdrTitle) hdrTitle.textContent = '💬 Messages';
+    if (hdrActs) hdrActs.innerHTML = `<button onclick="openModal('modal-new-dm')" style="background:transparent;border:none;color:var(--muted);font-size:15px;cursor:pointer;width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;" title="New DM">✏️</button>`;
+    renderDMSidebar(scroll);
+  } else if (v==='friends') {
+    if (hdrTitle) hdrTitle.textContent = '👥 Friends';
+    if (hdrActs) hdrActs.innerHTML = `<button onclick="openModal('modal-add-friend')" style="background:transparent;border:none;color:var(--muted);font-size:15px;cursor:pointer;width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;" title="Add Friend">➕</button>`;
+    scroll.innerHTML = `<div class="ch-item active">👥 All Friends</div><div class="ch-item" onclick="openModal('modal-add-friend')">➕ Add Friend</div>`;
+    renderFriendsList();
+  } else if (v==='discover') {
+    if (hdrTitle) hdrTitle.textContent = '🧭 Discover';
+    scroll.innerHTML = `<div class="ch-item active">🌍 Public Bastions</div><div class="ch-item" onclick="openModal('modal-join-bastion')">🔗 Join by Code</div><div class="ch-item" onclick="openModal('modal-create-bastion')">✨ Create Bastion</div>`;
+    loadDiscover();
+  } else if (v==='atelier') {
+    if (hdrTitle) hdrTitle.textContent = '💎 Atelier';
+    const ab = document.getElementById('atelier-balance');
+    if (ab) ab.textContent = CU?.onyx||0;
+    const db = document.getElementById('daily-btn');
+    if (db) { const today=new Date().toDateString(); if(CU?.lastDaily===today)db.classList.add('claimed'); else db.classList.remove('claimed'); }
+  } else if (v==='profile') {
+    if (hdrTitle) hdrTitle.textContent = '⚙️ Settings';
+    buildProfileNav(scroll);
+    buildProfileView('myprofile');
+  } else if (v==='bastion') {
+    renderBastionSidebar(scroll);
+  } else if (v==='bsettings') {
+    if (hdrTitle) hdrTitle.textContent = '⚙️ Bastion Settings';
+    renderBSettingsNav();
+  }
+}
+
+// ════════════════════════════════════════════
+// USERBAR & ONYX
+// ════════════════════════════════════════════
+function updateUserbar() {
+  if (!CU) return;
+  const ua = document.getElementById('ua');
+  const uaName = document.getElementById('ua-name');
+  const uaTag = document.getElementById('ua-tag');
+  if (ua) ua.innerHTML = buildAvatarHTML(CU.pfp, CU.displayName||CU.username, 34);
+  if (uaName) uaName.textContent = CU.displayName||CU.username;
+  if (uaTag) uaTag.textContent = '@'+CU.username;
+  updateOnyxDisplay();
+}
+function updateOnyxDisplay() {
+  ['onyx-val','atelier-balance'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=CU?.onyx||0;});
+}
+function buildAvatarHTML(pfp, name, size) {
+  const initial = (name||'?')[0].toUpperCase();
+  const s = `width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;`;
+  if (pfp) return `<img src="${pfp}" style="${s}" onerror="this.outerHTML='<span style=\\'font-size:${Math.floor(size/2.2)}px;\\'>${initial}</span>'">`;
+  return `<span style="font-size:${Math.floor(size/2.2)}px;">${initial}</span>`;
+}
+function renderRailBastions() {
+  const c = document.getElementById('rail-bastions');
+  if (!c) return;
+  c.innerHTML = (CU?.bastions||[]).map((b,i)=>`
+    <div class="rail-bastion ${curBastion===i?'active':''}" id="rl-b-${i}" onclick="openBastion(${i})" data-tip="${escapeHTML(b.name)}" style="margin-bottom:4px;">
+      ${b.icon?`<img src="${b.icon}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`:(b.emblem||'🏰')}
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════
+// HOME PANEL
+// ════════════════════════════════════════════
+function renderHomePanel() {
+  const qn = document.getElementById('quick-nav');
+  if (qn) qn.innerHTML = [
+    {icon:'💬',label:'Messages',sub:'Chat with friends',act:"showView('dms')",col:'rgba(96,165,250,.12)'},
+    {icon:'🧭',label:'Discover',sub:'Find communities',act:"showView('discover')",col:'rgba(52,211,153,.12)'},
+    {icon:'💎',label:'Atelier',sub:'Onyx & Radiance',act:"showView('atelier')",col:'rgba(255,249,62,.12)'},
+    {icon:'⚙️',label:'Settings',sub:'Profile & prefs',act:"showView('profile')",col:'rgba(167,139,250,.12)'},
+  ].map(t=>`<div class="qn-tile" onclick="${t.act}"><div class="qn-icon" style="background:${t.col}">${t.icon}</div><div class="qn-text"><h4>${t.label}</h4><p>${t.sub}</p></div></div>`).join('');
+
+  const af = document.getElementById('activity-feed');
+  if (af) af.innerHTML = [
+    {icon:'🏰',text:`Welcome back, <strong>${escapeHTML(CU?.displayName||CU?.username||'')}</strong>!`},
+    {icon:'👥',text:`<strong>${(CU?.friends||[]).length}</strong> friend(s) connected`},
+    {icon:'💰',text:`Onyx balance: <strong>${CU?.onyx||0}</strong>`},
+  ].map(i=>`<div class="activity-item"><div class="act-icon">${i.icon}</div><div class="act-text"><p>${i.text}</p></div></div>`).join('');
+
+  const rpB = document.getElementById('rp-bastions');
+  if (rpB) rpB.innerHTML = (CU?.bastions||[]).slice(0,6).map((b,i)=>`<div class="rp-notif" style="cursor:pointer;" onclick="openBastion(${i})"><div class="rn-icon">${b.emblem||'🏰'}</div><div class="rn-text"><p>${escapeHTML(b.name)}</p><div class="rn-time">${(b.channels||[]).length} channels</div></div></div>`).join('')||'<div style="padding:8px;font-size:12.5px;color:var(--muted);">No bastions yet</div>';
+  const rpF = document.getElementById('rp-friends');
+  if (rpF) rpF.innerHTML = (CU?.friends||[]).slice(0,6).map(f=>`<div class="rp-notif" style="cursor:pointer;" onclick="openDMView('${escapeHTML(f)}')"><div class="rn-icon" style="width:30px;height:30px;font-size:13px;">${buildAvatarHTML(null,f,30)}</div><div class="rn-text"><p style="font-weight:600;">${escapeHTML(f)}</p></div></div>`).join('')||'<div style="padding:8px;font-size:12.5px;color:var(--muted);">No friends yet</div>';
+
+  const mt = document.getElementById('marquee-track');
+  if (mt && !mt.children.length) {
+    const items=['🏰 Bastions','💬 Real-Time Chat','🎙 Voice Channels','🛡️ Roles','✨ Custom Emojis','💎 Onyx','🌟 Radiance','👥 Friends','🔔 Notifications','🤖 AutoMod'];
+    mt.innerHTML=[...items,...items].map(i=>`<div class="marquee-item"><span class="mi-label">${i}</span></div>`).join('');
+  }
+}
+
+// ════════════════════════════════════════════
+// DM SIDEBAR & CHAT
+// ════════════════════════════════════════════
+function renderDMSidebar(scroll) {
+  const friends = CU?.friends||[];
+  if (!friends.length) { scroll.innerHTML='<div style="padding:18px 14px;font-size:13px;color:var(--muted);">No DMs yet. Add friends to start!</div>'; return; }
+  scroll.innerHTML = '<div class="sec-label">Direct Messages</div>' + friends.map(f=>`
+    <div class="friend-item" id="dm-fi-${f}" onclick="openDMView('${escapeHTML(f)}')">
+      <div class="fa" style="width:32px;height:32px;font-size:13px;overflow:hidden;flex-shrink:0;">${buildAvatarHTML(null,f,32)}</div>
+      <div class="fi-info"><div class="fi-name">${escapeHTML(f)}</div></div>
+    </div>`).join('');
+}
+
+let _dmListener = null;
+function openDMView(username) {
+  if (!username) return;
+  curDM = username;
+  closeModal('modal-new-dm');
+  showView('dms');
+  const topTitle = document.getElementById('topbar-title');
+  if (topTitle) topTitle.textContent = '💬 '+username;
+  document.querySelectorAll('.friend-item').forEach(fi=>fi.classList.remove('active'));
+  const fi = document.getElementById('dm-fi-'+username);
+  if (fi) fi.classList.add('active');
+
+  const wrap = document.getElementById('dm-chat-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = `
+    <div class="chat-wrap">
+      <div class="chat-msgs" id="dm-msgs">
+        <div class="chat-welcome">
+          <div class="w-av">${buildAvatarHTML(null,username,60)}</div>
+          <h3>${escapeHTML(username)}</h3>
+          <p>Beginning of your conversation with <strong>${escapeHTML(username)}</strong>.</p>
+        </div>
+      </div>
+      <div class="reply-bar" id="dm-reply-bar">
+        <span class="reply-bar-text">Replying to <strong id="dm-reply-name"></strong></span>
+        <button onclick="cancelReply('dm')">✕</button>
+      </div>
+      <div class="chat-input-wrap">
+        <div class="chat-input-box">
+          <div class="chat-input-actions">
+            <button id="emoji-btn-dm" onclick="toggleEmojiPicker('dm-input')" title="Emoji">😊</button>
+          </div>
+          <textarea id="dm-input" placeholder="Message ${escapeHTML(username)}…" rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDM();}"
+            oninput="autoResize(this)"></textarea>
+          <button class="chat-send" onclick="sendDM()">➤</button>
+        </div>
+      </div>
+    </div>`;
+  loadDMMessages(username);
+}
+function openDMChat(u) { openDMView(u); }
+
+async function loadDMMessages(username) {
+  const msgsEl = document.getElementById('dm-msgs');
+  if (!msgsEl) return;
+  if (_dmListener) { try{_dmListener();}catch{} _dmListener=null; }
+  try {
+    const msgs = await FortizedSocial.getDMMessages(CU.username, username);
+    renderMessages(msgsEl, msgs||[], 'dm');
+    scrollBottom('dm-msgs');
+    _dmListener = FortizedSocial.listenDM(CU.username, username, msg => {
+      if (curDM!==username) return;
+      const el=document.getElementById('dm-msgs');
+      if (el) { appendMessage(el,msg,'dm',null); scrollBottom('dm-msgs'); }
+    });
+  } catch(e){console.warn('DM load',e);}
+}
+
+async function sendDM() {
+  const inp=document.getElementById('dm-input');
+  if (!inp||!curDM) return;
+  const text=inp.value.trim();
+  if (!text) return;
+  inp.value=''; inp.style.height='auto';
+  const rep=replyingTo;
+  cancelReply('dm');
+  try { await FortizedSocial.sendDMMessage(CU.username, curDM, text); }
+  catch { toast('Failed to send','error'); }
+}
+
+// New DM modal
+async function startNewDM() {
+  const inp=document.getElementById('new-dm-target');
+  const err=document.getElementById('new-dm-error');
+  if (!inp) return;
+  const username=inp.value.trim();
+  if (!username){if(err)err.textContent='Enter a username';return;}
+  const u=await FortizedSocial.getUserByName(username).catch(()=>null);
+  if (!u){if(err)err.textContent='User not found';return;}
+  openDMView(username);
+}
+
+// ════════════════════════════════════════════
+// BASTION OPEN & SIDEBAR
+// ════════════════════════════════════════════
+function openBastion(idx) {
+  if (idx<0||!CU.bastions?.[idx]) return;
+  curBastion=idx; curChannel=null;
+  document.querySelectorAll('.rail-bastion').forEach(el=>el.classList.remove('active'));
+  const rb=document.getElementById('rl-b-'+idx);
+  if (rb) rb.classList.add('active');
+  showView('bastion');
+  const wrap=document.getElementById('bastion-chat-wrap');
+  if (wrap) wrap.innerHTML=`<div class="empty-state"><div class="ei">🏰</div><h3>Pick a channel</h3><p>Select a text or voice channel from the sidebar.</p></div>`;
+  document.getElementById('member-list').innerHTML='';
+}
+
+function renderBastionSidebar(scroll) {
+  const b=CU.bastions?.[curBastion];
+  if (!b||!scroll) return;
+  const hdrTitle=document.getElementById('sidebar-title');
+  const hdrActs=document.getElementById('sidebar-hdr-actions');
+  if (hdrTitle) hdrTitle.textContent=(b.emblem||'🏰')+' '+b.name;
+  if (hdrActs) hdrActs.innerHTML=`
+    <button onclick="openBastionSettings()" title="Settings" style="background:transparent;border:none;color:var(--muted);font-size:15px;cursor:pointer;width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;">⚙️</button>
+    <button onclick="openModal('modal-leave-bastion')" title="Leave" style="background:transparent;border:none;color:var(--muted);font-size:15px;cursor:pointer;width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;">🚪</button>`;
+
+  const lv=document.getElementById('leave-title');
+  const ls=document.getElementById('leave-sub');
+  const lb=document.getElementById('leave-confirm-btn');
+  if (lv) lv.textContent='Leave '+b.name+'?';
+  if (ls) ls.textContent=b.owner===CU.username?'You are the owner. Leaving may delete this bastion.':'You\'ll need an invite to rejoin.';
+  if (lb) lb.onclick=()=>leaveBastion(curBastion);
+
+  const boostLv=b.boostLevel||0;
+  let html=`<div class="boost-bar" onclick="openBastionSettings('boost')">⚡ Level <span class="bl">${boostLv}</span> Bastion<button style="background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;margin-left:auto;">Boost →</button></div>`;
+  const chs=b.channels||[];
+  const isOwner=b.owner===CU.username;
+
+  const textChs=chs.filter(c=>c.type!=='voice');
+  const voiceChs=chs.filter(c=>c.type==='voice');
+
+  if (textChs.length||isOwner) {
+    html+=`<div class="cat-row">📝 TEXT CHANNELS ${isOwner?`<button onclick="addChannel(${curBastion},'text')">+</button>`:''}  </div>`;
+    chs.forEach((ch,i)=>{
+      if (ch.type==='voice') return;
+      const tier=getAgeTier(CU?.dateOfBirth);
+      const blocked=ch.nsfw&&tier==='child';
+      const nsfwTag=ch.nsfw?`<span style="font-size:9px;background:rgba(248,113,113,.15);color:var(--red);padding:1px 5px;border-radius:4px;flex-shrink:0;">NSFW</span>`:'';
+      html+=`<div class="ch-item ${curChannel===i?'active':''}" id="ch-sb-${i}" ${blocked?'style="opacity:.4;pointer-events:none;"':''}onclick="selectChannel(${i})">
+        <span>#</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(ch.name)}</span>${nsfwTag}${blocked?'<span title="Age blocked">🔒</span>':''}
+      </div>`;
+    });
+  }
+  if (voiceChs.length||isOwner) {
+    html+=`<div class="cat-row">🎙 VOICE ${isOwner?`<button onclick="addChannel(${curBastion},'voice')">+</button>`:''}  </div>`;
+    chs.forEach((ch,i)=>{
+      if (ch.type!=='voice') return;
+      const live=voiceConnected&&voiceChannel===i;
+      html+=`<div class="voice-ch-item ${live?'active-vc':''}" onclick="selectChannel(${i})"><span>🎙</span><span>${escapeHTML(ch.name)}</span>${live?'<span style="font-size:9px;color:var(--green);margin-left:auto;">● LIVE</span>':''}</div>`;
+    });
+  }
+
+  const vcb=document.getElementById('voice-connected-bar');
+  if (voiceConnected&&vcb) {
+    vcb.classList.add('show');
+    const vcn=document.getElementById('vcb-channel-name');
+    const vcp=document.getElementById('vcb-participants');
+    if (vcn) vcn.textContent='🎙 '+(chs[voiceChannel]?.name||'Voice');
+    if (vcp) vcp.innerHTML=voiceParticipants.map(p=>`<div class="vcb-part">${buildAvatarHTML(p.pfp,p.name,18)} ${escapeHTML(p.name)}</div>`).join('');
+  } else if (vcb) vcb.classList.remove('show');
+  scroll.innerHTML=html;
+}
+
+async function leaveBastion(idx) {
+  const b=CU.bastions?.[idx];
+  if (!b) return;
+  closeModal('modal-leave-bastion');
+  try{await FortizedSocial.removeBastionMember(b.globalId||b.name,CU.username);}catch{}
+  CU.bastions.splice(idx,1);
+  await saveUser();
+  curBastion=null; curChannel=null;
+  renderRailBastions();
+  showView('home');
+  toast('Left '+b.name,'info');
+}
+
+// ════════════════════════════════════════════
+// CHANNEL SELECTION & NSFW GATE
+// ════════════════════════════════════════════
+function selectChannel(idx) {
+  const b=CU.bastions?.[curBastion];
+  const ch=b?.channels?.[idx];
+  if (!ch) return;
+  curChannel=idx;
+  document.querySelectorAll('.ch-item').forEach(el=>el.classList.remove('active'));
+  const el=document.getElementById('ch-sb-'+idx);
+  if (el) el.classList.add('active');
+
+  if (ch.type==='voice') { joinVoice(idx); return; }
+
+  const wrap=document.getElementById('bastion-chat-wrap');
+  if (!wrap) return;
+  const access=checkNSFWAccess(ch);
+  if (access===false) {
+    wrap.innerHTML=`<div class="empty-state" style="margin:20px;background:rgba(248,113,113,.04);border:1px solid rgba(248,113,113,.2);border-radius:18px;padding:40px;"><div class="ei" style="font-size:48px;">🔒</div><h3 style="color:var(--red);">Age-Restricted Channel</h3><p>This channel is restricted for your age group.</p></div>`;
+    return;
+  }
+  if (access===null) {
+    wrap.innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;">
+      <div style="font-size:56px;margin-bottom:18px;filter:blur(3px);">🔞</div>
+      <h3 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:10px;">Sensitive Content</h3>
+      <p style="font-size:13.5px;color:var(--muted-light);max-width:340px;line-height:1.65;margin-bottom:20px;">
+        <strong>#${escapeHTML(ch.name)}</strong> is marked as containing sensitive content. By proceeding, you confirm you understand this.
+      </p>
+      <div style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:14px;padding:14px 18px;max-width:340px;font-size:12.5px;color:var(--red);margin-bottom:20px;">
+        ⚠️ This action is logged for platform safety and compliance.
+      </div>
+      <button class="btn-d" onclick="proceedToNSFWChannel(${idx})" style="padding:12px 28px;font-size:14px;">View Sensitive Content</button>
+      <button class="btn-g" onclick="openBastion(curBastion)" style="margin-top:10px;font-size:13px;">← Go Back</button>
+    </div>`;
+    return;
+  }
+  loadChatChannel(idx);
+}
+
+function proceedToNSFWChannel(idx) {
+  const logEntry={user:CU.username,action:'nsfw_channel_confirmed',channel:CU.bastions?.[curBastion]?.channels?.[idx]?.name,tier:getAgeTier(CU?.dateOfBirth),timestamp:new Date().toISOString()};
+  console.log('[SAFETY LOG]',logEntry);
+  const sl=JSON.parse(localStorage.getItem('ftz_safety_log')||'[]');
+  sl.push(logEntry);
+  localStorage.setItem('ftz_safety_log',JSON.stringify(sl.slice(-200)));
+  loadChatChannel(idx);
+}
+
+function loadChatChannel(idx) {
+  const b=CU.bastions?.[curBastion];
+  const ch=b?.channels?.[idx];
+  if (!ch) return;
+  const wrap=document.getElementById('bastion-chat-wrap');
+  if (!wrap) return;
+  const nsfwBadge=ch.nsfw?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;background:rgba(248,113,113,.15);color:var(--red);margin-left:6px;">NSFW</span>`:'';
+  const sep=document.getElementById('tb-sep');
+  const desc=document.getElementById('tb-desc');
+  if (sep) sep.style.display='';
+  if (desc) desc.textContent='#'+ch.name;
+  wrap.innerHTML=`
+    <div class="chat-wrap">
+      <div class="chat-msgs" id="ch-msgs-${idx}">
+        <div class="chat-welcome">
+          <div class="w-av" style="font-size:26px;background:var(--panel2);">#</div>
+          <h3>#${escapeHTML(ch.name)}${nsfwBadge}</h3>
+          <p>${escapeHTML(ch.desc||'Welcome to #'+ch.name+'!')}</p>
+        </div>
+      </div>
+      <div class="reply-bar" id="ch-reply-bar">
+        <span class="reply-bar-text">Replying to <strong id="ch-reply-name"></strong></span>
+        <button onclick="cancelReply('ch')">✕</button>
+      </div>
+      <div class="chat-input-wrap">
+        <div class="chat-input-box">
+          <div class="chat-input-actions">
+            <button id="emoji-btn-ch" onclick="toggleEmojiPicker('ch-input')" title="Emoji">😊</button>
+          </div>
+          <textarea id="ch-input" placeholder="Message #${escapeHTML(ch.name)}…" rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChannelMsg(${idx});}"
+            oninput="autoResize(this)"></textarea>
+          <button class="chat-send" onclick="sendChannelMsg(${idx})">➤</button>
+        </div>
+      </div>
+    </div>`;
+  loadChannelMessages(idx);
+  renderMemberList();
+}
+
+// ════════════════════════════════════════════
+// CHANNEL MESSAGES
+// ════════════════════════════════════════════
+let _chListener=null;
+async function loadChannelMessages(idx) {
+  const b=CU.bastions?.[curBastion];
+  const ch=b?.channels?.[idx];
+  const msgsEl=document.getElementById('ch-msgs-'+idx);
+  if (!ch||!msgsEl) return;
+  if (_chListener){try{_chListener();}catch{}_chListener=null;}
+  try {
+    const msgs=await FortizedSocial.getBastionChannelMessages(b.globalId||b.name,ch.name);
+    renderMessages(msgsEl,msgs||[],'ch');
+    scrollBottom('ch-msgs-'+idx);
+    _chListener=FortizedSocial.listenBastionChannel(b.globalId||b.name,ch.name,msg=>{
+      if (curChannel!==idx) return;
+      const el=document.getElementById('ch-msgs-'+idx);
+      if (el){appendMessage(el,msg,'ch',null);scrollBottom('ch-msgs-'+idx);}
+    });
+  } catch(e){console.warn('Channel load',e);}
+}
+
+async function sendChannelMsg(idx) {
+  const inp=document.getElementById('ch-input');
+  if (!inp) return;
+  const text=inp.value.trim();
+  if (!text) return;
+  const b=CU.bastions?.[curBastion];
+  const ch=b?.channels?.[idx];
+  if (!ch) return;
+  if (autoModCheck(text,b)) return;
+  inp.value=''; inp.style.height='auto';
+  cancelReply('ch');
+  try { await FortizedSocial.sendBastionChannelMessage(b.globalId||b.name,ch.name,CU.username,text); }
+  catch { toast('Failed to send','error'); }
+}
+
+// ════════════════════════════════════════════
+// MESSAGE RENDERING
+// ════════════════════════════════════════════
+function renderMessages(container, msgs, context) {
+  container.querySelectorAll('.msg-row,.date-div').forEach(el=>el.remove());
+  if (!msgs.length) return;
+  let lastDate=null, lastAuthor=null;
+  msgs.forEach(msg=>{
+    const d=msg.timestamp?new Date(msg.timestamp).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'Today';
+    if (d!==lastDate) {
+      const div=document.createElement('div');
+      div.className='date-div'; div.textContent=d;
+      container.appendChild(div);
+      lastDate=d; lastAuthor=null;
+    }
+    appendMessage(container,msg,context,lastAuthor);
+    lastAuthor=msg.from;
+  });
+}
+
+function appendMessage(container, msg, context, prevAuthor) {
+  const id=msg.id||(msg.from+msg.timestamp);
+  if (document.querySelector(`[data-msgid="${CSS.escape(id)}"]`)) return;
+  const isFirst=msg.from!==prevAuthor;
+  const isOwn=msg.from===CU?.username;
+  const time=msg.timestamp?new Date(msg.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):(msg.time||'');
+  const row=document.createElement('div');
+  row.className=`msg-row ${isFirst?'msg-first':'msg-cont'}`;
+  row.dataset.msgid=id;
+  row.dataset.text=msg.text||'';
+  row.dataset.from=msg.from||'';
+
+  const replyHTML=msg.replyTo?`<div class="msg-reply-ref">↩ <strong>${escapeHTML(msg.replyTo.from||'')}</strong>: ${escapeHTML((msg.replyTo.text||'').slice(0,60))}</div>`:'';
+  const fwdHTML=msg.forwarded?`<div class="msg-forward-tag">↪ Forwarded</div>`:'';
+  const editTag=msg.edited?`<span class="msg-edited">(edited)</span>`:'';
+  const reactHTML=msg.reactions?Object.entries(msg.reactions).map(([emoji,users])=>{
+    const arr=Array.isArray(users)?users:Object.values(users);
+    return `<span class="r-pill${arr.includes(CU?.username)?' mine':''}" onclick="toggleReaction('${escapeHTML(id)}','${emoji}','${context}')">${emoji} ${arr.length}</span>`;
+  }).join(''):'';
+
+  const safeId=escapeHTML(id);
+  const safeText=escapeHTML((msg.text||'').slice(0,100).replace(/'/g,' '));
+  const safeFrom=escapeHTML(msg.from||'');
+
+  if (isFirst) {
+    const avId='av-'+id.replace(/[^a-z0-9]/gi,'-');
+    row.innerHTML=`
+      <div class="msg-av-wrap"><div class="msg-av-inner" id="${avId}" onclick="viewUserProfile('${safeFrom}')" style="cursor:pointer;">${buildAvatarHTML(null,msg.from,36)}</div></div>
+      <div class="msg-content-col">
+        ${fwdHTML}${replyHTML}
+        <div class="msg-header">
+          <span class="msg-author" onclick="viewUserProfile('${safeFrom}')" style="cursor:pointer;">${safeFrom}</span>
+          <span class="msg-timestamp">${time}</span>
+        </div>
+        <div class="msg-text" id="mt-${avId}">${parseMD(escapeHTML(msg.text||''))}${editTag}</div>
+        ${reactHTML?`<div class="msg-reactions">${reactHTML}</div>`:''}
+      </div>
+      ${buildMsgActions(msg,context,id)}`;
+    FortizedSocial.getUserByName(msg.from).then(u=>{if(u?.pfp){const el=document.getElementById(avId);if(el)el.innerHTML=buildAvatarHTML(u.pfp,msg.from,36);}}).catch(()=>{});
+  } else {
+    const textId='mt-c-'+id.replace(/[^a-z0-9]/gi,'-');
+    row.innerHTML=`
+      <div class="msg-av-wrap"><span class="msg-time-small">${time}</span></div>
+      <div class="msg-content-col">
+        ${fwdHTML}${replyHTML}
+        <div class="msg-text" id="${textId}">${parseMD(escapeHTML(msg.text||''))}${editTag}</div>
+        ${reactHTML?`<div class="msg-reactions">${reactHTML}</div>`:''}
+      </div>
+      ${buildMsgActions(msg,context,id)}`;
+  }
+  container.appendChild(row);
+}
+
+function buildMsgActions(msg, context, id) {
+  const isOwn=msg.from===CU?.username;
+  const safeId=escapeHTML(id);
+  const safeFrom=escapeHTML(msg.from||'');
+  const safeText=escapeHTML((msg.text||'').replace(/'/g,' ').slice(0,100));
+  return `<div class="msg-acts">
+    <button onclick="replyToMsg('${safeId}','${safeFrom}','${context}')" title="Reply">↩</button>
+    <button onclick="addReactionUI(event,'${safeId}','${context}')" title="React">😊</button>
+    <button onclick="forwardMsg('${safeText}')" title="Forward">↪</button>
+    ${isOwn?`<button onclick="editMsg('${safeId}')" title="Edit">✏️</button>`:''}
+    ${isOwn?`<button onclick="deleteMsg('${safeId}')" title="Delete" style="color:var(--red);">🗑</button>`:''}
+    <button onclick="reportMessage('${safeId}','${safeText}')" title="Report" style="color:var(--muted);">🚩</button>
+  </div>`;
+}
+
+// ════════════════════════════════════════════
+// MESSAGE ACTIONS
+// ════════════════════════════════════════════
+function replyToMsg(msgId, fromName, context) {
+  const row=document.querySelector(`[data-msgid="${CSS.escape(msgId)}"]`);
+  replyingTo={id:msgId,from:fromName,text:row?.dataset.text||''};
+  const bar=document.getElementById(context+'-reply-bar');
+  const nameEl=document.getElementById(context+'-reply-name');
+  if (bar) bar.classList.add('show');
+  if (nameEl) nameEl.textContent=fromName;
+  const inp=document.getElementById(context+'-input');
+  if (inp) inp.focus();
+}
+function cancelReply(context) {
+  replyingTo=null;
+  const bar=document.getElementById(context+'-reply-bar');
+  if (bar) bar.classList.remove('show');
+}
+function editMsg(msgId) {
+  const row=document.querySelector(`[data-msgid="${CSS.escape(msgId)}"]`);
+  if (!row) return;
+  const original=row.dataset.text||'';
+  const textEl=row.querySelector('.msg-text');
+  if (!textEl) return;
+  textEl.innerHTML=`<textarea style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--accent-mid);border-radius:8px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13.5px;padding:6px 10px;resize:none;outline:none;box-sizing:border-box;" rows="2" id="edit-ta">${escapeHTML(original)}</textarea>
+    <div style="display:flex;gap:6px;margin-top:4px;font-size:12px;">
+      <button class="btn-a" style="padding:4px 12px;font-size:12px;" onclick="saveEdit('${escapeHTML(msgId)}')">Save</button>
+      <button class="btn-g" style="padding:4px 12px;font-size:12px;" onclick="cancelEdit('${escapeHTML(msgId)}','${escapeHTML(original)}')">Cancel</button>
+    </div>`;
+}
+function cancelEdit(msgId, original) {
+  const row=document.querySelector(`[data-msgid="${CSS.escape(msgId)}"]`);
+  const textEl=row?.querySelector('.msg-text');
+  if (textEl) textEl.innerHTML=parseMD(escapeHTML(original));
+}
+function saveEdit(msgId) {
+  const ta=document.getElementById('edit-ta');
+  if (!ta) return;
+  const newText=ta.value.trim();
+  if (!newText) return;
+  const row=document.querySelector(`[data-msgid="${CSS.escape(msgId)}"]`);
+  if (row) row.dataset.text=newText;
+  const textEl=row?.querySelector('.msg-text');
+  if (textEl) textEl.innerHTML=parseMD(escapeHTML(newText))+'<span class="msg-edited">(edited)</span>';
+  toast('Message edited','success');
+}
+function deleteMsg(msgId) {
+  showCustomConfirm('Delete this message?',()=>{
+    const row=document.querySelector(`[data-msgid="${CSS.escape(msgId)}"]`);
+    if (row) row.remove();
+    toast('Deleted','success');
+  });
+}
+function forwardMsg(text) {
+  forwardMsgText=text;
+  const targets=document.getElementById('forward-targets');
+  if (targets) targets.innerHTML=(CU?.friends||[]).map(f=>`
+    <div class="ch-item" style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:4px;cursor:pointer;" onclick="forwardToDM('${escapeHTML(f)}');closeModal('modal-forward');">
+      💬 ${escapeHTML(f)}
+    </div>`).join('')||'<div style="color:var(--muted);font-size:13px;">No friends to forward to</div>';
+  openModal('modal-forward');
+}
+async function forwardToDM(username) {
+  try { await FortizedSocial.sendDMMessage(CU.username,username,forwardMsgText+' [forwarded]'); toast('Forwarded to '+username,'success'); }
+  catch { toast('Forward failed','error'); }
+}
+function addReactionUI(e, msgId, context) {
+  const emojis=['👍','❤️','😂','😮','😢','🔥','✨','👀','🎉','💯'];
+  showCtxMenu(e.clientX,e.clientY,emojis.map(em=>({icon:em,label:em,action:()=>toggleReaction(msgId,em,context)})));
+}
+function toggleReaction(msgId,emoji,context) {
+  const row=document.querySelector(`[data-msgid="${CSS.escape(msgId)}"]`);
+  if (!row) return;
+  toast('Reacted with '+emoji,'success');
+}
+function scrollToMsg(msgId) {
+  const el=document.querySelector(`[data-msgid="${CSS.escape(msgId)}"]`);
+  if (el) el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+// ════════════════════════════════════════════
+// MEMBER LIST
+// ════════════════════════════════════════════
+async function renderMemberList() {
+  const ml=document.getElementById('member-list');
+  if (!ml) return;
+  const b=CU.bastions?.[curBastion];
+  if (!b) return;
+  ml.innerHTML='<div class="ml-role-header">Members</div>';
+  let members=[];
+  try{members=await FortizedSocial.getBastionMembers(b.globalId||b.name)||[];}catch{}
+  if (!members.length&&b.owner) members=[b.owner];
+  const roles=b.roles||[];
+  const memberRoles=b.memberRoles||{};
+  members.forEach(u=>{
+    const rids=memberRoles[u]||[];
+    const role=roles.find(r=>rids.includes(r.id));
+    ml.innerHTML+=`<div class="ml-entry" onclick="viewUserProfile('${escapeHTML(u)}')">
+      <div class="ml-av" style="position:relative;">${buildAvatarHTML(null,u,30)}<div class="ml-status online"></div></div>
+      <div class="ml-info"><div class="ml-name" style="color:${role?.color||'var(--muted-light)'};">${escapeHTML(u)}</div></div>
+    </div>`;
+  });
+}
+
+// ════════════════════════════════════════════
+// VOICE
+// ════════════════════════════════════════════
+function joinVoice(idx) {
+  const b=CU.bastions?.[curBastion];
+  const ch=b?.channels?.[idx];
+  if (!ch) return;
+  voiceConnected=true; voiceChannel=idx;
+  voiceParticipants=[{name:CU.username,pfp:CU.pfp}];
+  const vcb=document.getElementById('voice-connected-bar');
+  if (vcb){vcb.classList.add('show');document.getElementById('vcb-channel-name').textContent='🎙 '+ch.name;document.getElementById('vcb-participants').innerHTML=voiceParticipants.map(p=>`<div class="vcb-part">${buildAvatarHTML(p.pfp,p.name,18)} ${escapeHTML(p.name)}</div>`).join('');}
+  const wrap=document.getElementById('bastion-chat-wrap');
+  if (!wrap) return;
+  wrap.innerHTML=`
+    <div class="voice-panel">
+      <div class="voice-panel-title">🎙 ${escapeHTML(ch.name)}</div>
+      <div class="voice-panel-sub">Voice Channel · ${voiceParticipants.length} connected</div>
+      <div class="voice-avatars">${voiceParticipants.map(p=>`<div class="voice-avatar-card"><div class="voice-avatar-ring">${buildAvatarHTML(p.pfp,p.name,72)}</div><div class="voice-avatar-name">${escapeHTML(p.name)}</div></div>`).join('')}</div>
+      <div class="voice-controls">
+        <button class="vc-btn ${isMuted?'active':''}" onclick="toggleVoiceMute()" title="${isMuted?'Unmute':'Mute'}">${isMuted?'🔇':'🎤'}</button>
+        <button class="vc-btn" onclick="disconnectVoice()" style="background:rgba(248,113,113,.2);">📵 Disconnect</button>
+        <button class="vc-btn ${isDeafened?'active':''}" onclick="toggleVoiceDeafen()">${isDeafened?'🔕':'🎧'}</button>
+      </div>
+    </div>`;
+  toast('Joined #'+ch.name,'success');
+}
+function disconnectVoice(){
+  voiceConnected=false;voiceChannel=null;voiceParticipants=[];
+  const vcb=document.getElementById('voice-connected-bar');
+  if(vcb)vcb.classList.remove('show');
+  const wrap=document.getElementById('bastion-chat-wrap');
+  if(wrap)wrap.innerHTML=`<div class="empty-state"><div class="ei">🏰</div><h3>Select a channel</h3></div>`;
+  toast('Disconnected','info');
+}
+function toggleVoiceMute(){isMuted=!isMuted;if(voiceChannel!==null)joinVoice(voiceChannel);}
+function toggleVoiceDeafen(){isDeafened=!isDeafened;if(voiceChannel!==null)joinVoice(voiceChannel);}
+function toggleMic(){isMuted=!isMuted;const b=document.getElementById('mic-btn');if(b)b.textContent=isMuted?'🔇':'🎤';toast(isMuted?'Muted':'Unmuted','info');}
+
+// ════════════════════════════════════════════
+// FRIENDS
+// ════════════════════════════════════════════
+async function renderFriendsList(filter='all') {
+  const list=document.getElementById('friends-list');
+  if (!list) return;
+  const friends=CU?.friends||[];
+  const pending=CU?.friendRequestsReceived||[];
+  let html='';
+  if (filter!=='online'&&pending.length){
+    html+=`<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Pending — ${pending.length}</div>`;
+    pending.forEach(f=>{html+=`<div class="activity-item"><div class="act-icon">${buildAvatarHTML(null,f,40)}</div><div class="act-text"><p><strong>${escapeHTML(f)}</strong> sent you a friend request</p></div><div style="display:flex;gap:6px;"><button class="rn-accept" onclick="acceptFriend('${escapeHTML(f)}')">✓</button><button class="rn-decline" onclick="declineFriend('${escapeHTML(f)}')">✕</button></div></div>`;});
+  }
+  if (friends.length){
+    html+=`<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:12px 0 8px;">Friends — ${friends.length}</div>`;
+    friends.forEach(f=>{html+=`<div class="activity-item"><div class="act-icon">${buildAvatarHTML(null,f,40)}</div><div class="act-text"><p style="font-weight:600;">${escapeHTML(f)}</p></div><div style="display:flex;gap:6px;"><button class="btn-g" style="padding:6px 12px;font-size:12px;" onclick="openDMView('${escapeHTML(f)}')">💬</button><button class="btn-d" style="padding:6px 12px;font-size:12px;" onclick="removeFriend('${escapeHTML(f)}')">Remove</button></div></div>`;});
+  }
+  list.innerHTML=html||`<div class="empty-state"><div class="ei">👥</div><h3>No friends yet</h3><p>Add friends by username!</p><button class="btn-a" onclick="openModal('modal-add-friend')">+ Add Friend</button></div>`;
+}
+function filterFriends(filter,btn){
+  document.querySelectorAll('#friends-tabs .disc-tab').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderFriendsList(filter);
+}
+async function sendFriendRequest(){
+  const inp=document.getElementById('friend-target');
+  const err=document.getElementById('friend-error');
+  const succ=document.getElementById('friend-success');
+  if(!inp)return;
+  const username=inp.value.trim();
+  if(!username){if(err)err.textContent='Enter a username';return;}
+  if(username===CU.username){if(err)err.textContent="Can't add yourself";return;}
+  if(err)err.textContent='';if(succ)succ.textContent='';
+  try{const r=await FortizedSocial.sendFriendRequest(CU.username,username);if(r.ok){if(succ)succ.textContent=r.msg;inp.value='';await refreshCU();}else{if(err)err.textContent=r.msg||'Failed';}}
+  catch{if(err)err.textContent='Error';}
+}
+async function acceptFriend(username){
+  try{await FortizedSocial.acceptFriendRequest(CU.username,username);await refreshCU();toast('Now friends with '+username+'!','success');renderFriendsList();renderDMSidebar(document.getElementById('sidebar-scroll'));}
+  catch{toast('Error','error');}
+}
+async function declineFriend(username){
+  try{await FortizedSocial.declineFriendRequest(CU.username,username);await refreshCU();renderFriendsList();toast('Declined','info');}catch{}
+}
+async function removeFriend(username){
+  showCustomConfirm('Remove '+username+' from friends?',async()=>{
+    try{await FortizedSocial.removeFriend(CU.username,username);await refreshCU();toast('Removed '+username,'info');renderFriendsList();}
+    catch{toast('Error','error');}
+  });
+}
+
+// ════════════════════════════════════════════
+// DISCOVER
+// ════════════════════════════════════════════
+async function loadDiscover(){
+  const grid=document.getElementById('discover-grid');
+  if(!grid)return;
+  grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">Loading…</div>';
+  try{discoverData=Object.values(await FortizedSocial.getGlobalBastions()||{});}catch{discoverData=[];}
+  renderDiscoverGrid(discoverData);
+}
+function renderDiscoverGrid(bastions){
+  const grid=document.getElementById('discover-grid');
+  if(!grid)return;
+  const filtered=bastions.filter(b=>b.public!==false&&(discoverTab==='all'||b.category===discoverTab));
+  if(!filtered.length){grid.innerHTML=`<div style="grid-column:1/-1;" class="empty-state"><div class="ei">🔍</div><h3>No bastions found</h3></div>`;return;}
+  grid.innerHTML=filtered.map(b=>{
+    const joined=(CU?.bastions||[]).some(ub=>ub.globalId===b.id||ub.name===b.name);
+    return `<div class="bc">
+      <div class="bc-banner" style="background:linear-gradient(135deg,rgba(255,249,62,.08),rgba(62,207,110,.06));display:flex;align-items:center;justify-content:center;font-size:40px;">${b.emblem||'🏰'}</div>
+      <div class="bc-body">
+        <div class="bc-meta"><div class="bc-icon">${b.emblem||'🏰'}</div><div style="flex:1"></div>
+          ${joined?`<span style="font-size:11px;font-weight:700;color:var(--green);">✓ Joined</span>`:`<button class="btn-a" style="padding:5px 12px;font-size:12px;" onclick="promptJoinPublicBastion('${escapeHTML(b.id||b.name)}')">Join</button>`}
+        </div>
+        <div class="bc-name">${escapeHTML(b.name)}</div>
+        <div class="bc-desc">${escapeHTML((b.desc||'').slice(0,100))}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">${b.memberCount||0} members</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function filterDiscover(q){renderDiscoverGrid(discoverData.filter(b=>(b.name||'').toLowerCase().includes(q.toLowerCase())));}
+function setDiscoverTab(tab,btn){discoverTab=tab;document.querySelectorAll('.disc-tab').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderDiscoverGrid(discoverData);}
+async function promptJoinPublicBastion(bastionId){
+  try{
+    const all=await FortizedSocial.getGlobalBastions()||{};
+    const b=Object.values(all).find(x=>x.id===bastionId||x.name===bastionId);
+    if(!b){toast('Bastion not found','error');return;}
+    const already=(CU.bastions||[]).some(ub=>ub.globalId===b.id||ub.name===b.name);
+    if(already){toast('Already joined!','info');openBastion((CU.bastions||[]).findIndex(ub=>ub.globalId===b.id||ub.name===b.name));return;}
+    const localB={name:b.name,emblem:b.emblem||'🏰',desc:b.desc||'',channels:b.channels||[{name:'general',type:'text',desc:'General chat'}],roles:b.roles||[],owner:b.owner,globalId:b.id||b.name,memberRoles:{},automod:{},boostLevel:0,customEmojis:[]};
+    CU.bastions=[...(CU.bastions||[]),localB];
+    await saveUser();
+    await FortizedSocial.addBastionMember(b.id||b.name,CU.username);
+    renderRailBastions();
+    toast('Joined '+b.name+'!','success');
+    openBastion(CU.bastions.length-1);
+  }catch(e){toast('Failed to join','error');console.error(e);}
+}
+
+// ════════════════════════════════════════════
+// MISC MISSING
+// ════════════════════════════════════════════
+function pickCBEmoji(){
+  const emojis=['🏰','⚔️','🛡️','🔮','🏹','🌟','🔥','❄️','🌊','⛩️','🎮','🎨','🎵','🎭','🎯','🧩','⚡','🌺','🦋','🐉','🦅','🌈','🦁','🐺','🦊','🎪','🚀','💫','🌙','☀️'];
+  const x=event?.clientX||window.innerWidth/2, y=event?.clientY||window.innerHeight/2;
+  showCtxMenu(x,y,emojis.map(e=>({icon:e,label:e,action:()=>selectCBEmoji(e)})));
+}
+function setCBVis(v,btn){
+  cbVisibility=v;
+  document.querySelectorAll('.vis-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+}
+function banUser(username,permanent=true){
+  showCustomInput('Ban Reason','Enter reason:',reason=>{
+    if(!reason)return;
+    const bans=JSON.parse(localStorage.getItem('ftz_bans')||'[]');
+    bans.push({username,reason,bannedBy:CU.username,permanent,createdAt:new Date().toISOString()});
+    localStorage.setItem('ftz_bans',JSON.stringify(bans));
+    logAudit(permanent?'permanent_ban':'temp_ban',username,reason);
+    toast(username+' banned','success');
+    loadAdminTab('users');
+  });
+}
+function unbanUser(username){
+  const bans=JSON.parse(localStorage.getItem('ftz_bans')||'[]');
+  localStorage.setItem('ftz_bans',JSON.stringify(bans.filter(b=>b.username!==username)));
+  logAudit('unban',username,'Unbanned by admin');
+  toast(username+' unbanned','success');
+  loadAdminTab('users');
+}
+function updateDOBField(){
+  const input=document.getElementById('dob-input');
+  if(!input?.value)return;
+  const tier=getAgeTier(input.value);
+  const labels={child:'🧒 Protected (13–15)',teen:'🧑 Teen (16–17)',adult:'🧑‍🦳 Adult (18+)'};
+  const hint=document.getElementById('dob-tier-hint');
+  if(hint)hint.textContent=tier?'Age tier: '+labels[tier]:'⚠️ Must be 13+';
+}
+
+// ════════════════════════════════════════════
+// APP INIT
+// ════════════════════════════════════════════
+(async function appInit(){
+  if (document.readyState==='loading') await new Promise(r=>document.addEventListener('DOMContentLoaded',r));
+
+  // Get username — FortizedSocial stores plain string
+  let username=localStorage.getItem('ftz_current')||localStorage.getItem('fortized_current_user');
+  if (!username){window.location.href='login.html';return;}
+  // Handle old format that stored full JSON object
+  if (username.startsWith('{')){try{username=JSON.parse(username).username;}catch{}}
+  username=username.replace(/^["']|["']$/g,'').trim();
+  if (!username){window.location.href='login.html';return;}
+
+  // Try cached user object first — instant load
+  const cached=localStorage.getItem('ftz_user_'+username);
+  if (cached){
+    try{CU=JSON.parse(cached);}catch{CU=null;}
+  }
+
+  if (!CU?.username){
+    // First load — must fetch from Firebase
+    const lbl=document.querySelector('#app-loading .lbl');
+    if(lbl)lbl.textContent='Signing in…';
+    try{
+      CU=await Promise.race([
+        FortizedSocial.getUserByName(username),
+        new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),8000))
+      ]);
+    }catch{CU=null;}
+    if (!CU?.username){
+      localStorage.removeItem('ftz_current');
+      localStorage.removeItem('fortized_current_user');
+      window.location.href='login.html';
+      return;
+    }
+    localStorage.setItem('ftz_user_'+username,JSON.stringify(CU));
+  }
+
+  // Set defaults
+  if (!CU.bastions)CU.bastions=[];
+  if (!CU.friends)CU.friends=[];
+  if (CU.onyx===undefined)CU.onyx=0;
+  notifSettings=CU.notifSettings||notifSettings;
+
+  updateUserbar();
+  renderRailBastions();
+
+  // Hide loading screen immediately
+  const loader=document.getElementById('app-loading');
+  if(loader)loader.style.display='none';
+
+  showView('home');
+  updateNotifBadge().catch(()=>{});
+
+  // Admin rail button
+  if (isAdmin()){
+    const rail=document.getElementById('rail');
+    if(rail&&!document.getElementById('admin-rail-btn')){
+      const btn=document.createElement('div');
+      btn.id='admin-rail-btn';btn.className='rail-btn';btn.innerHTML='🛡️';
+      btn.dataset.tip='Admin Panel';
+      btn.style.cssText='border:1px solid rgba(248,113,113,.3);color:var(--red);margin-top:4px;';
+      btn.onclick=tryOpenAdmin;
+      const pb=rail.querySelector('#rb-profile');
+      if(pb)rail.insertBefore(btn,pb);else rail.appendChild(btn);
+    }
+  }
+
+  // Show quiz or DOB if needed
+  if(!CU.verified)setTimeout(showVerifyQuiz,400);
+  else if(!CU.dateOfBirth)setTimeout(showDOBSetup,600);
+
+  // Check invite link
+  try{checkInviteLink();}catch{}
+
+  // Event listeners
+  document.addEventListener('contextmenu',e=>{e.preventDefault();handleContextMenu(e);});
+  document.addEventListener('click',e=>{
+    const menu=document.getElementById('ctx-menu');
+    if(menu&&!menu.contains(e.target))menu.style.display='none';
+    const np=document.getElementById('notif-panel');
+    if(notifPanelOpen&&np&&!np.contains(e.target)&&e.target.id!=='rb-notifs'){notifPanelOpen=false;np.classList.remove('open');}
+    const ep=document.getElementById('emoji-picker');
+    if(ep&&ep.classList.contains('show')&&!ep.contains(e.target)&&!['emoji-btn-dm','emoji-btn-ch'].includes(e.target.id))ep.classList.remove('show');
+  });
+  document.querySelectorAll('.modal-overlay').forEach(overlay=>{
+    overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.classList.remove('open');});
+  });
+  document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&e.key==='A')tryOpenAdmin();});
+
+  // Background refresh
+  setTimeout(async()=>{
+    try{
+      const fresh=await Promise.race([
+        FortizedSocial.getUserByName(username),
+        new Promise((_,r)=>setTimeout(()=>r(new Error('t')),6000))
+      ]);
+      if(fresh?.username){CU=fresh;saveLocal();updateUserbar();renderRailBastions();updateOnyxDisplay();}
+    }catch{}
+  },1000);
+
+  setInterval(async()=>{try{await updateNotifBadge();}catch{}},30000);
+})();
+
+
+  if (!CU?.username) return;
+  // FortizedSocial stores just the username string — keep that
+  localStorage.setItem('ftz_current', CU.username);
+  localStorage.setItem('fortized_current_user', CU.username);
+  // We store the full object under a separate key for instant loads
+  localStorage.setItem('ftz_user_' + CU.username, JSON.stringify(CU));
+}
+
+
+
+
+
+// ── Admin helpers ────────────────────────────────────────────
+
+
+
 ','🌺','🦋','🐉','🦅','🎭','🎯','🧩','⚡'],
     emojis2 = emojis;
   const grid = emojis2.map(e=>`<span style="font-size:22px;cursor:pointer;padding:4px;border-radius:8px;" onclick="selectCBEmoji('${e}')">${e}</span>`).join('');
@@ -1734,12 +2817,7 @@ async function doLogout() {
 // ════════════════════════════════════════════
 // SEARCH
 // ════════════════════════════════════════════
-function handleSearch(q) {
-  if(!q) { document.querySelectorAll('.msg-row').forEach(el=>el.style.opacity=''); return; }
-  document.querySelectorAll('.msg-row').forEach(el=>{
-    const text=el.dataset.text||''; el.style.opacity=text.toLowerCase().includes(q.toLowerCase())?'1':'0.2';
-  });
-}
+
 
 // ════════════════════════════════════════════
 // CONTEXT MENU
@@ -1834,28 +2912,16 @@ document.addEventListener('click',e=>{if(e.target.classList.contains('modal-over
 // TOAST
 // ════════════════════════════════════════════
 let toastTimer=null;
-function toast(msg,type='info'){
-  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type;t.classList.add('show');
-  if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3200);
-}
+
 
 // ════════════════════════════════════════════
 // UTILS
 // ════════════════════════════════════════════
-function escapeHTML(str){if(!str)return'';return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function parseMD(text){
-  return text
-    .replace(/```([\s\S]*?)```/g,'<code style="display:block;background:rgba(0,0,0,.3);padding:8px 12px;border-radius:8px;font-family:monospace;font-size:12.5px;white-space:pre-wrap;margin:4px 0;">$1</code>')
-    .replace(/`([^`]+)`/g,'<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*([^*]+)\*/g,'<em>$1</em>')
-    .replace(/~~([^~]+)~~/g,'<del>$1</del>')
-    .replace(/^> (.+)/gm,'<blockquote style="border-left:3px solid var(--accent-mid);padding-left:8px;color:var(--muted-light);margin:2px 0;">$1</blockquote>')
-    .replace(/(https?:\/\/\S+)/g,'<a href="$1" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:underline;" onclick="event.stopPropagation()">$1</a>');
-}
-function scrollBottom(id){const el=document.getElementById(id);if(el)setTimeout(()=>{el.scrollTop=el.scrollHeight;},10);}
-function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
-function formatTimeAgo(ts){if(!ts)return'';const diff=Date.now()-new Date(ts).getTime();const m=Math.floor(diff/60000);if(m<1)return'just now';if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
+
+
+
+
+
 function hasPerm(perm){
   if(!CU||curBastion===null)return false;
   const b=CU.bastions[curBastion];if(!b)return false;
@@ -1864,11 +2930,7 @@ function hasPerm(perm){
   return memberRoles.some(rid=>(b.roles||[]).find(r=>r.id===rid)?.permissions?.includes(perm));
 }
 
-function attachFile(e,context){
-  const file=e.target.files[0];if(!file)return;
-  if(file.size>8*1024*1024){toast('Max 8MB','error');return;}
-  toast(`📎 ${file.name} — file attachments coming soon!`,'info');
-}
+
 
 
 
@@ -2460,19 +3522,7 @@ function adjustOnyx(direction) {
   toast(`Logged: ${finalAmount > 0 ? '+' : ''}${finalAmount} Onyx to ${username}`, 'success');
 }
 
-function logAudit(type, target, reason) {
-  const log = JSON.parse(localStorage.getItem('ftz_audit_log')||'[]');
-  log.push({
-    id: 'aud_'+Date.now(),
-    admin: CU.username,
-    type,
-    action: type.replace(/_/g,' '),
-    target,
-    reason,
-    timestamp: new Date().toISOString()
-  });
-  localStorage.setItem('ftz_audit_log', JSON.stringify(log));
-}
+
 
 async function adminSearchBastion() {
   const q = document.getElementById('admin-bastion-search')?.value?.trim();
@@ -2584,129 +3634,11 @@ async function completeVerification() {
 // ════════════════════════════════════════════
 // CHANNEL SELECTION & NSFW GATE
 // ════════════════════════════════════════════
-function selectChannel(idx) {
-  const b = CU.bastions[curBastion];
-  if (!b) return;
-  const ch = b.channels?.[idx];
-  if (!ch) return;
 
-  curChannel = idx;
 
-  // Update sidebar active state
-  document.querySelectorAll('.ch-item').forEach(el => el.classList.remove('active'));
-  const chEl = document.getElementById(`ch-sb-${idx}`);
-  if (chEl) chEl.classList.add('active');
 
-  const wrap = document.getElementById('bastion-chat-wrap');
-  if (!wrap) return;
 
-  // Voice channel
-  if (ch.type === 'voice') {
-    joinVoice(idx);
-    return;
-  }
 
-  // NSFW age gate check
-  const access = checkNSFWAccess(ch);
-  if (access === false) {
-    // CHILD tier — hard block
-    wrap.innerHTML = `
-      <div class="chat-wrap">
-        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px;">
-          <div class="empty-state" style="background:rgba(248,113,113,.04);border:1px solid rgba(248,113,113,.2);border-radius:18px;max-width:400px;padding:40px;">
-            <div class="ei" style="font-size:48px;">🔒</div>
-            <h3 style="color:var(--red);">Age-Restricted Channel</h3>
-            <p>This channel contains content that is not permitted for your age group. Access has been permanently restricted for your protection.</p>
-          </div>
-        </div>
-      </div>`;
-    return;
-  }
-  if (access === null) {
-    // TEEN tier — friction gate
-    wrap.innerHTML = `
-      <div class="chat-wrap">
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;">
-          <div style="font-size:56px;margin-bottom:18px;filter:blur(3px);">🔞</div>
-          <h3 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:10px;">Sensitive Content</h3>
-          <p style="font-size:13.5px;color:var(--muted-light);max-width:340px;line-height:1.65;margin-bottom:20px;">
-            This channel (<strong>#${escapeHTML(ch.name)}</strong>) has been marked as containing mature or sensitive content.
-            By proceeding, you confirm you understand the nature of this content.
-          </p>
-          <div style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:14px;padding:14px 18px;max-width:340px;font-size:12.5px;color:var(--red);margin-bottom:20px;line-height:1.5;">
-            ⚠️ This action is logged for platform safety and compliance purposes.
-          </div>
-          <button class="btn-d" onclick="proceedToNSFWChannel(${idx})" style="padding:12px 28px;font-size:14px;">View Sensitive Content</button>
-          <button class="btn-g" onclick="openBastion(curBastion)" style="margin-top:10px;font-size:13px;">← Go Back</button>
-        </div>
-      </div>`;
-    return;
-  }
-
-  // Normal access — render chat
-  loadChatChannel(idx);
-}
-
-function proceedToNSFWChannel(idx) {
-  // Log the manual confirmation
-  const logEntry = {
-    user: CU.username,
-    action: 'nsfw_channel_confirmed',
-    channel: CU.bastions[curBastion]?.channels?.[idx]?.name,
-    tier: getAgeTier(CU?.dateOfBirth),
-    timestamp: new Date().toISOString(),
-    bastionId: CU.bastions[curBastion]?.globalId || CU.bastions[curBastion]?.name,
-  };
-  console.log('[SAFETY LOG]', logEntry);
-  // Store locally for admin audit
-  const safetyLog = JSON.parse(localStorage.getItem('ftz_safety_log')||'[]');
-  safetyLog.push(logEntry);
-  localStorage.setItem('ftz_safety_log', JSON.stringify(safetyLog.slice(-200)));
-  loadChatChannel(idx);
-}
-
-function loadChatChannel(idx) {
-  const b = CU.bastions[curBastion];
-  const ch = b?.channels?.[idx];
-  if (!ch) return;
-
-  const wrap = document.getElementById('bastion-chat-wrap');
-  const nsfwBadge = ch.nsfw ? `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;background:rgba(248,113,113,.15);color:var(--red);margin-left:6px;">NSFW</span>` : '';
-
-  wrap.innerHTML = `
-    <div class="chat-wrap">
-      <div class="chat-msgs" id="ch-msgs-${idx}">
-        <div class="chat-welcome">
-          <div class="w-av" style="font-size:26px;background:var(--panel2);">#</div>
-          <h3>#${escapeHTML(ch.name)}${nsfwBadge}</h3>
-          <p>${escapeHTML(ch.desc || 'Welcome to #' + ch.name + '! This is the beginning of this channel.')}</p>
-        </div>
-      </div>
-      <div class="reply-bar" id="ch-reply-bar">
-        <span class="reply-bar-text">Replying to <strong id="ch-reply-name"></strong></span>
-        <button onclick="cancelReply('ch')">✕</button>
-      </div>
-      <div class="chat-input-wrap">
-        <div class="chat-input-box">
-          <div class="chat-input-actions">
-            <button id="emoji-btn-ch" onclick="toggleEmojiPicker('ch-input')" title="Emoji">😊</button>
-          </div>
-          <textarea id="ch-input" placeholder="Message #${escapeHTML(ch.name)}…" rows="1"
-            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChannelMsg(${idx});}"
-            oninput="autoResize(this)"></textarea>
-          <button class="chat-send" onclick="sendChannelMsg(${idx})">➤</button>
-        </div>
-      </div>
-    </div>`;
-
-  loadChannelMessages(idx);
-  renderMemberList();
-
-  // Update topbar
-  document.getElementById('topbar-title').innerHTML = `<span style="font-size:16px;">${b.emblem||'🏰'}</span> ${escapeHTML(b.name)}`;
-  document.getElementById('tb-sep').style.display = '';
-  document.getElementById('tb-desc').textContent = ch.desc || '#' + ch.name;
-}
 
 // ════════════════════════════════════════════
 // DATE OF BIRTH CAPTURE (first-time setup)
@@ -2820,82 +3752,9 @@ async function updatePfp(e) {
 // ════════════════════════════════════════════
 // BASTION SIDEBAR WITH CHANNEL CLICK
 // ════════════════════════════════════════════
-function renderBastionSidebar(scroll) {
-  const b = CU.bastions[curBastion];
-  if (!b || !scroll) return;
-  document.getElementById('sidebar-title').textContent = (b.emblem||'🏰') + ' ' + b.name;
-  document.getElementById('sidebar-hdr-actions').innerHTML = `
-    <button onclick="openBastionSettings()" title="Settings" style="background:transparent;border:none;color:var(--muted);font-size:15px;cursor:pointer;width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;">⚙️</button>
-    <button onclick="openModal('modal-leave-bastion')" title="Leave" style="background:transparent;border:none;color:var(--muted);font-size:15px;cursor:pointer;width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;">🚪</button>`;
 
-  const boostLevel = b.boostLevel || 0;
-  let html = `<div class="boost-bar" onclick="openBastionSettings('boost')">⚡ Level <span class="bl">${boostLevel}</span> Bastion<button style="background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;margin-left:auto;">Boost →</button></div>`;
 
-  const channels = b.channels || [];
-  const textChs = channels.filter(c => c.type !== 'voice');
-  const voiceChs = channels.filter(c => c.type === 'voice');
-  const isOwner = b.owner === CU.username;
 
-  if (textChs.length || isOwner) {
-    html += `<div class="cat-row">📝 TEXT CHANNELS <button onclick="addChannel(${curBastion},'text')">+</button></div>`;
-    channels.forEach((ch, i) => {
-      if (ch.type === 'voice') return;
-      const ageTier = getAgeTier(CU?.dateOfBirth);
-      const nsfwBlocked = ch.nsfw && ageTier === 'child';
-      const nsfwTag = ch.nsfw ? `<span style="font-size:9px;background:rgba(248,113,113,.15);color:var(--red);padding:1px 5px;border-radius:4px;flex-shrink:0;">NSFW</span>` : '';
-      html += `<div class="ch-item ${curChannel===i?'active':''} ${nsfwBlocked?'opacity:.4':'cursor:pointer'}" id="ch-sb-${i}" onclick="selectChannel(${i})" style="${nsfwBlocked?'opacity:.4;pointer-events:none;':''}">
-        <span>#</span>
-        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(ch.name)}</span>
-        ${nsfwTag}
-        ${nsfwBlocked?'<span title="Blocked for age">🔒</span>':''}
-      </div>`;
-    });
-  }
-
-  if (voiceChs.length || isOwner) {
-    html += `<div class="cat-row">🎙 VOICE CHANNELS <button onclick="addChannel(${curBastion},'voice')">+</button></div>`;
-    channels.forEach((ch, i) => {
-      if (ch.type !== 'voice') return;
-      html += `<div class="voice-ch-item ${voiceConnected&&voiceChannel===i?'active-vc':''}" onclick="selectChannel(${i})">
-        <span>🎙</span><span>${escapeHTML(ch.name)}</span>
-        ${voiceConnected&&voiceChannel===i?`<span style="font-size:9px;color:var(--green);margin-left:auto;">● LIVE</span>`:''}
-      </div>`;
-    });
-  }
-
-  // Voice connected bar
-  const vcb = document.getElementById('voice-connected-bar');
-  if (voiceConnected && vcb) {
-    vcb.classList.add('show');
-    document.getElementById('vcb-channel-name').textContent = '🎙 ' + (channels[voiceChannel]?.name || 'Voice');
-    document.getElementById('vcb-participants').innerHTML = voiceParticipants.map(p=>`<div class="vcb-part">${buildAvatarHTML(p.pfp,p.name,18)} ${escapeHTML(p.name)}</div>`).join('');
-  } else if (vcb) {
-    vcb.classList.remove('show');
-  }
-
-  scroll.innerHTML = html;
-
-  // Setup leave bastion confirm button
-  const leaveBtn = document.getElementById('leave-confirm-btn');
-  if (leaveBtn) {
-    document.getElementById('leave-title').textContent = `Leave ${b.name}?`;
-    document.getElementById('leave-sub').textContent = b.owner===CU.username ? 'You are the owner. Leaving will transfer ownership or delete this bastion.' : "You'll need an invite to rejoin.";
-    leaveBtn.onclick = () => leaveBastion(curBastion);
-  }
-}
-
-async function leaveBastion(idx) {
-  const b = CU.bastions[idx];
-  if (!b) return;
-  closeModal('modal-leave-bastion');
-  try { await FortizedSocial.removeBastionMember(b.globalId||b.name, CU.username); } catch {}
-  CU.bastions.splice(idx, 1);
-  await saveUser();
-  curBastion = null; curChannel = null;
-  renderRailBastions();
-  showView('home');
-  toast(`Left ${b.name}`, 'info');
-}
 
 // ════════════════════════════════════════════
 // APP INIT
@@ -2906,15 +3765,53 @@ async function leaveBastion(idx) {
     await new Promise(r => document.addEventListener('DOMContentLoaded', r));
   }
 
-  // ─── Step 1: Load from localStorage INSTANTLY — no network wait ───
-  const raw = localStorage.getItem('ftz_current') || localStorage.getItem('fortized_current_user');
-  if (!raw) { window.location.href = 'login.html'; return; }
-  try {
-    CU = JSON.parse(raw);
-    if (!CU?.username) throw new Error('bad user');
-  } catch { window.location.href = 'login.html'; return; }
+  // ─── Step 1: Get username from localStorage (FortizedSocial stores just the string) ───
+  let username = localStorage.getItem('ftz_current') || localStorage.getItem('fortized_current_user');
+  if (!username) { window.location.href = 'login.html'; return; }
 
-  // Apply defaults from cached data immediately
+  // FortizedSocial.setCurrentUsername stores a plain string — handle both cases
+  // (old app.html stored full JSON object, new firebase lib stores just username string)
+  if (username.startsWith('{')) {
+    try { username = JSON.parse(username).username; } catch {}
+  }
+  // Strip any surrounding quotes
+  username = username.replace(/^["']|["']$/g, '').trim();
+  if (!username) { window.location.href = 'login.html'; return; }
+
+  // ─── Step 2: Check for a cached full user object (key: ftz_user_<username>) ───
+  const cachedRaw = localStorage.getItem('ftz_user_' + username);
+  if (cachedRaw) {
+    try {
+      CU = JSON.parse(cachedRaw);
+    } catch { CU = null; }
+  }
+
+  // ─── Step 3: If no cache, MUST fetch from Firebase (first load after login) ───
+  // Show a fast spinner during this one-time fetch only
+  if (!CU || !CU.username) {
+    const loader = document.getElementById('app-loading');
+    const lbl = loader?.querySelector('.lbl');
+    if (lbl) lbl.textContent = 'Signing you in…';
+
+    try {
+      CU = await Promise.race([
+        FortizedSocial.getUserByName(username),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
+      ]);
+    } catch { CU = null; }
+
+    if (!CU || !CU.username) {
+      // Firebase failed — redirect to login
+      localStorage.removeItem('ftz_current');
+      localStorage.removeItem('fortized_current_user');
+      window.location.href = 'login.html';
+      return;
+    }
+    // Cache the full object so next load is instant
+    localStorage.setItem('ftz_user_' + username, JSON.stringify(CU));
+  }
+
+  // Apply defaults
   if (!CU.bastions) CU.bastions = [];
   if (!CU.friends) CU.friends = [];
   if (CU.onyx === undefined) CU.onyx = 0;
@@ -2923,26 +3820,27 @@ async function leaveBastion(idx) {
   updateUserbar();
   renderRailBastions();
 
-  // ─── Step 2: Hide loading screen RIGHT NOW — do NOT wait for Firebase ───
+  // ─── Step 4: Hide loading screen ───
   const loader = document.getElementById('app-loading');
   if (loader) loader.style.display = 'none';
 
-  // ─── Step 3: Silently refresh from Firebase IN THE BACKGROUND ───
-  // This updates data without blocking the UI at all
+  // ─── Step 5: Silently refresh from Firebase IN THE BACKGROUND ───
+  // Next page load will use the refreshed cache — zero UI blocking
   setTimeout(async () => {
     try {
       const fresh = await Promise.race([
-        FortizedSocial.getUserByName(CU.username),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
+        FortizedSocial.getUserByName(username),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))
       ]);
       if (fresh && fresh.username) {
         CU = fresh;
-        saveLocal();
+        // Update cache for next instant load
+        localStorage.setItem('ftz_user_' + username, JSON.stringify(CU));
         updateUserbar();
         renderRailBastions();
         updateOnyxDisplay();
       }
-    } catch { /* silent fail — local data is fine */ }
+    } catch { /* silent — cached data is still valid */ }
   }, 0);
 
   showView('home');
@@ -3025,6 +3923,7 @@ document.addEventListener('keydown', e => {
 
 // Add admin button to rail if user is admin
 // Admin rail button is injected by appInit after user loads
+
 
 
 
