@@ -32,18 +32,7 @@ body::before{content:"";position:absolute;inset:0;background-image:linear-gradie
 .upload-box strong{color:var(--muted-light);font-weight:600;}
 #pfpName{margin-top:8px;font-size:12px;color:var(--accent);min-height:16px;}
 .divider{height:1px;background:var(--border);margin:24px 0;}
-
-/* ── Compact agree notice ── */
-.agree-notice{
-  display:flex;align-items:flex-start;gap:12px;
-  padding:14px 16px;
-  background:rgba(255,249,62,.03);
-  border:1px solid rgba(255,249,62,.1);
-  border-radius:var(--radius);
-  margin-bottom:20px;
-  cursor:pointer;
-  user-select:none;
-}
+.agree-notice{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:rgba(255,249,62,.03);border:1px solid rgba(255,249,62,.1);border-radius:var(--radius);margin-bottom:20px;cursor:pointer;user-select:none;}
 .agree-notice input[type=checkbox]{display:none;}
 .checkbox-box{width:20px;height:20px;min-width:20px;border-radius:6px;border:1.5px solid #252e42;background:var(--input-bg);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;margin-top:1px;}
 .agree-notice input:checked + .checkbox-box{background:var(--accent);border-color:var(--accent);}
@@ -52,7 +41,6 @@ body::before{content:"";position:absolute;inset:0;background-image:linear-gradie
 .agree-text{font-size:13px;color:var(--muted-light);line-height:1.55;}
 .agree-text a{color:var(--accent);text-decoration:none;font-weight:600;}
 .agree-text a:hover{text-decoration:underline;}
-
 .error{font-size:12.5px;color:#f87171;margin-bottom:14px;min-height:18px;display:flex;align-items:center;gap:7px;}
 .error:not(:empty)::before{content:"⚠";font-size:12px;}
 .field-error{font-size:12px;color:#f87171;margin-top:5px;min-height:16px;}
@@ -116,7 +104,7 @@ body::before{content:"";position:absolute;inset:0;background-image:linear-gradie
         </svg>
       </div>
       <div class="agree-text">
-        By creating an account you agree to our <a href="terms.html" target="_blank" onclick="event.stopPropagation()">Terms of Service and Terms of Use.</a>. Learn how we handle your data in our <a href="privacy.html" target="_blank" onclick="event.stopPropagation()">Privacy Policy</a>.
+        By creating an account you agree to our <a href="terms.html" target="_blank" onclick="event.stopPropagation()">Terms of Service and Terms of Use</a>. Learn how we handle your data in our <a href="privacy.html" target="_blank" onclick="event.stopPropagation()">Privacy Policy</a>.
       </div>
     </label>
 
@@ -185,6 +173,18 @@ async function doSignup() {
       return;
     }
 
+    // ─────────────────────────────────────────────────────────
+    // THE FIX: cache the user object before redirecting so
+    // app.html loads instantly without a Firebase fetch.
+    // ─────────────────────────────────────────────────────────
+    function cacheAndRedirect(userObj) {
+      const u = userObj || result.user;
+      localStorage.setItem('ftz_current', u.username);
+      localStorage.setItem('fortized_current_user', u.username);
+      localStorage.setItem('ftz_user_' + u.username, JSON.stringify(u));
+      window.location.href = 'app.html';
+    }
+
     const file = pfpInput.files[0];
     if (file) {
       const reader = new FileReader();
@@ -192,24 +192,18 @@ async function doSignup() {
         try {
           const updatedUser = { ...result.user, pfp: e.target.result };
           await FortizedSocial.saveUserObject(updatedUser);
+          cacheAndRedirect(updatedUser);
         } catch (err) {
           console.error('PFP save error:', err);
+          cacheAndRedirect(result.user);
         }
-        localStorage.setItem('ftz_current', username);
-        localStorage.setItem('fortized_current_user', username);
-        window.location.href = 'app.html';
       };
-      reader.onerror = () => {
-        localStorage.setItem('ftz_current', username);
-        localStorage.setItem('fortized_current_user', username);
-        window.location.href = 'app.html';
-      };
+      reader.onerror = () => cacheAndRedirect(result.user);
       reader.readAsDataURL(file);
     } else {
-      localStorage.setItem('ftz_current', username);
-      localStorage.setItem('fortized_current_user', username);
-      window.location.href = 'app.html';
+      cacheAndRedirect(result.user);
     }
+
   } catch (err) {
     console.error('Signup error:', err);
     errorDiv.textContent = 'Connection error. Check your internet and try again.';
