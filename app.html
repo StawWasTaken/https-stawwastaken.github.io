@@ -2906,7 +2906,7 @@ async function leaveBastion(idx) {
     await new Promise(r => document.addEventListener('DOMContentLoaded', r));
   }
 
-  // Get user from storage
+  // ─── Step 1: Load from localStorage INSTANTLY — no network wait ───
   const raw = localStorage.getItem('ftz_current') || localStorage.getItem('fortized_current_user');
   if (!raw) { window.location.href = 'login.html'; return; }
   try {
@@ -2914,13 +2914,7 @@ async function leaveBastion(idx) {
     if (!CU?.username) throw new Error('bad user');
   } catch { window.location.href = 'login.html'; return; }
 
-  // Refresh from Firebase
-  try {
-    const fresh = await FortizedSocial.getUserByName(CU.username);
-    if (fresh) { CU = fresh; saveLocal(); }
-  } catch {}
-
-  // Set defaults
+  // Apply defaults from cached data immediately
   if (!CU.bastions) CU.bastions = [];
   if (!CU.friends) CU.friends = [];
   if (CU.onyx === undefined) CU.onyx = 0;
@@ -2929,9 +2923,27 @@ async function leaveBastion(idx) {
   updateUserbar();
   renderRailBastions();
 
-  // Hide loading screen
+  // ─── Step 2: Hide loading screen RIGHT NOW — do NOT wait for Firebase ───
   const loader = document.getElementById('app-loading');
   if (loader) loader.style.display = 'none';
+
+  // ─── Step 3: Silently refresh from Firebase IN THE BACKGROUND ───
+  // This updates data without blocking the UI at all
+  setTimeout(async () => {
+    try {
+      const fresh = await Promise.race([
+        FortizedSocial.getUserByName(CU.username),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
+      ]);
+      if (fresh && fresh.username) {
+        CU = fresh;
+        saveLocal();
+        updateUserbar();
+        renderRailBastions();
+        updateOnyxDisplay();
+      }
+    } catch { /* silent fail — local data is fine */ }
+  }, 0);
 
   showView('home');
   updateNotifBadge();
