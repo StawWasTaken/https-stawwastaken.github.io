@@ -1842,7 +1842,11 @@ async function promptJoinPublicBastion(bastionId){
 // MISC MISSING
 // ════════════════════════════════════════════
 function pickCBEmoji(){
-  const emojis=['🏰','⚔️','🛡️','🔮','🏹','🌟','🔥','❄️','🌊','⛩️','🎮','🎨','🎵','🎭','🎯','🧩','⚡
+  const emojis=['🏰','⚔️','🛡️','🔮','🏹','🌟','🔥','❄️','🌊','⛩️','🎮','🎨','🎵','🎭','🎯','🧩','⚡','🌺','🦋','🐉','🦅','🌈','🦁','🐺','🦊','🎪','🚀','💫','🌙','☀️'];
+  const x=event&&event.clientX||window.innerWidth/2;
+  const y=event&&event.clientY||window.innerHeight/2;
+  showCtxMenu(x,y,emojis.map(e=>({icon:e,label:e,action:()=>selectCBEmoji(e)})));
+}
 function setCBVis(v,btn){
   cbVisibility=v;
   document.querySelectorAll('.vis-btn').forEach(b=>b.classList.remove('active'));
