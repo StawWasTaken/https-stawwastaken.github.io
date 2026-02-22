@@ -80,11 +80,12 @@ body::before{content:"";position:absolute;inset:0;background-image:linear-gradie
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="FortizedSocial-firebase.js"></script>
 <script>
-const loginBtn = document.getElementById('loginBtn');
+const loginBtn        = document.getElementById('loginBtn');
 const identifierInput = document.getElementById('identifier');
-const passwordInput = document.getElementById('password');
-const errorDiv = document.getElementById('error');
+const passwordInput   = document.getElementById('password');
+const errorDiv        = document.getElementById('error');
 
+// Already logged in → go straight to app (no Firebase call needed)
 const existing = localStorage.getItem('ftz_current') || localStorage.getItem('fortized_current_user');
 if (existing) window.location.href = 'app.html';
 
@@ -106,10 +107,27 @@ async function doLogin() {
       errorDiv.textContent = result.msg;
       setLoading(false);
       const card = document.querySelector('.card');
-      card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+      card.classList.remove('shake');
+      void card.offsetWidth;
+      card.classList.add('shake');
       return;
     }
+
+    // ─────────────────────────────────────────────────────────
+    // THE FIX: cache the full user object before redirecting.
+    // FortizedSocial.login() fetches the user from Firebase and
+    // returns it as result.user — we store it under ftz_user_<username>
+    // so app.html reads it instantly without any network call.
+    // ─────────────────────────────────────────────────────────
+    const user = result.user;
+    if (user?.username) {
+      localStorage.setItem('ftz_current', user.username);
+      localStorage.setItem('fortized_current_user', user.username);
+      localStorage.setItem('ftz_user_' + user.username, JSON.stringify(user));
+    }
+
     window.location.href = 'app.html';
+
   } catch (err) {
     console.error('Login error:', err);
     errorDiv.textContent = 'Connection error. Check your internet and try again.';
