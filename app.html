@@ -3510,17 +3510,27 @@ async function adminSearchBastion() {
 
 
 function showVerifyQuiz() {
+  document.getElementById('verify-overlay')?.remove();
   const overlay = document.createElement('div');
-  overlay.className = 'verify-overlay';
   overlay.id = 'verify-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(4,6,10,.97);backdrop-filter:blur(24px);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
-    <div class="verify-card">
-      <div class="verify-logo"><img src="FortizedSecurity logo.png" onerror="this.style.display='none'; this.parentElement.textContent='🛡️'"></div>
-      <h2>Human Verification</h2>
-      <p class="verify-sub">Please answer a few quick questions to verify you're a real person. Answer at least 3 correctly to continue.</p>
-      <div class="quiz-progress" id="quiz-progress"></div>
-      <div id="quiz-question-area"></div>
-      <div id="quiz-result" style="display:none;text-align:center;"></div>
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:28px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.8);">
+      <div style="height:3px;background:linear-gradient(90deg,transparent,var(--accent),transparent);"></div>
+      <div style="padding:36px 40px 40px;">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:28px;">
+          <div style="width:52px;height:52px;background:rgba(255,249,62,.06);border:1px solid rgba(255,249,62,.15);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🛡️</div>
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;">Human Verification</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:3px;">Answer 3 of 5 correctly to continue</div>
+          </div>
+        </div>
+        <div id="quiz-progress-bar" style="display:flex;gap:5px;margin-bottom:28px;">
+          ${QUIZ_QUESTIONS.map((_,i)=>`<div id="qpb-${i}" style="flex:1;height:4px;border-radius:99px;background:var(--border);transition:background .3s;"></div>`).join('')}
+        </div>
+        <div id="quiz-question-area"></div>
+        <div id="quiz-result" style="display:none;text-align:center;padding:10px 0;"></div>
+      </div>
     </div>`;
   document.body.appendChild(overlay);
   quizIdx = 0; quizCorrect = 0; quizAnswers = [];
@@ -3529,54 +3539,68 @@ function showVerifyQuiz() {
 
 function renderQuizQuestion() {
   const qEl = document.getElementById('quiz-question-area');
-  const prog = document.getElementById('quiz-progress');
-  if (!qEl || !prog) return;
+  if (!qEl) return;
   if (quizIdx >= QUIZ_QUESTIONS.length) { showQuizResult(); return; }
+  QUIZ_QUESTIONS.forEach((_,i) => {
+    const seg = document.getElementById('qpb-'+i);
+    if (!seg) return;
+    if (i < quizIdx) seg.style.background = quizAnswers[i] ? 'var(--green)' : 'var(--red)';
+    else if (i === quizIdx) seg.style.background = 'var(--accent)';
+    else seg.style.background = 'var(--border)';
+  });
   const q = QUIZ_QUESTIONS[quizIdx];
-  prog.innerHTML = QUIZ_QUESTIONS.map((_,i)=>`<div class="quiz-dot ${i<quizIdx?'done':i===quizIdx?'current':''}"></div>`).join('');
   qEl.innerHTML = `
-    <div class="quiz-question">
-      <p>Q${quizIdx+1}: ${escapeHTML(q.q)}</p>
-      <div class="quiz-options">
-        ${q.opts.map((opt,i)=>`<div class="quiz-opt" onclick="answerQuiz(${i})">${escapeHTML(opt)}</div>`).join('')}
-      </div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Question ${quizIdx+1} of ${QUIZ_QUESTIONS.length}</div>
+    <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#fff;line-height:1.45;margin-bottom:20px;">${escapeHTML(q.q)}</div>
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      ${q.opts.map((opt,i)=>`
+        <button id="qopt-${i}" data-correct="${opt===q.a}" onclick="answerQuiz(${i})" style="width:100%;padding:13px 18px;border-radius:13px;border:1.5px solid var(--border);background:rgba(255,255,255,.02);color:var(--muted-light);font-family:'DM Sans',sans-serif;font-size:14px;text-align:left;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px;">
+          <span style="width:26px;height:26px;min-width:26px;border-radius:8px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'Syne',sans-serif;">${['A','B','C','D'][i]}</span>
+          <span>${escapeHTML(opt)}</span>
+        </button>`).join('')}
     </div>`;
 }
 
 function answerQuiz(selectedIdx) {
-  const q = QUIZ_QUESTIONS[quizIdx];
-  const opts = document.querySelectorAll('.quiz-opt');
-  const correct = selectedIdx === q.a;
-  opts[selectedIdx].classList.add(correct ? 'correct' : 'wrong');
-  if (correct) { quizCorrect++; opts[selectedIdx].classList.add('correct'); }
-  else { opts[selectedIdx].classList.add('wrong'); opts[q.a].classList.add('correct'); }
-  if (correct) quizAnswers.push(true); else quizAnswers.push(false);
+  const opts = document.querySelectorAll('#quiz-question-area button');
+  opts.forEach(o => { o.onclick = null; o.style.cursor = 'default'; });
+  const sel = document.getElementById('qopt-'+selectedIdx);
+  const isCorrect = sel && sel.dataset.correct === 'true';
+  if (isCorrect) {
+    sel.style.cssText += ';border-color:var(--green);background:rgba(62,207,110,.1);color:var(--green);';
+    quizCorrect++;
+  } else {
+    sel.style.cssText += ';border-color:var(--red);background:rgba(248,113,113,.1);color:var(--red);';
+    opts.forEach(o => { if (o.dataset.correct === 'true') o.style.cssText += ';border-color:var(--green);background:rgba(62,207,110,.08);color:var(--green);'; });
+  }
+  quizAnswers.push(isCorrect);
+  const seg = document.getElementById('qpb-'+quizIdx);
+  if (seg) seg.style.background = isCorrect ? 'var(--green)' : 'var(--red)';
   quizIdx++;
-  setTimeout(renderQuizQuestion, 900);
+  setTimeout(renderQuizQuestion, 1000);
 }
 
 async function showQuizResult() {
   const passed = quizCorrect >= 3;
-  const prog = document.getElementById('quiz-progress');
   const qEl = document.getElementById('quiz-question-area');
   const res = document.getElementById('quiz-result');
-  if (prog) prog.innerHTML = QUIZ_QUESTIONS.map((_,i)=>`<div class="quiz-dot done"></div>`).join('');
   if (qEl) qEl.style.display = 'none';
-  if (res) {
-    res.style.display = '';
-    if (passed) {
-      res.innerHTML = `
-        <div style="font-size:48px;margin-bottom:12px;">✅</div>
-        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:8px;color:var(--green);">Verified!</div>
-        <div style="font-size:13.5px;color:var(--muted-light);margin-bottom:20px;">You got ${quizCorrect}/${QUIZ_QUESTIONS.length} correct. Welcome to Fortized!</div>
-        <button class="btn-a" onclick="completeVerification()">Enter Fortized →</button>`;
-    } else {
-      res.innerHTML = `
-        <div style="font-size:48px;margin-bottom:12px;">❌</div>
-        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:8px;color:var(--red);">Verification Failed</div>
-        <div style="font-size:13.5px;color:var(--muted-light);margin-bottom:20px;">You got ${quizCorrect}/${QUIZ_QUESTIONS.length} correct. Please try again.</div>
-        <button class="btn-a" onclick="quizIdx=0;quizCorrect=0;quizAnswers=[];document.getElementById('quiz-result').style.display='none';document.getElementById('quiz-question-area').style.display='';renderQuizQuestion();">Try Again</button>`;
-    }
+  if (!res) return;
+  res.style.display = '';
+  if (passed) {
+    res.innerHTML = `
+      <div style="width:72px;height:72px;background:rgba(62,207,110,.1);border:1px solid rgba(62,207,110,.3);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 18px;">✅</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--green);margin-bottom:8px;">You're Verified!</div>
+      <div style="font-size:13.5px;color:var(--muted-light);margin-bottom:6px;">You got <strong style="color:#fff;">${quizCorrect} of ${QUIZ_QUESTIONS.length}</strong> correct.</div>
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:28px;">Welcome to the fortress.</div>
+      <button class="btn-a" onclick="completeVerification()" style="padding:13px 32px;font-size:15px;">Enter Fortized →</button>`;
+  } else {
+    res.innerHTML = `
+      <div style="width:72px;height:72px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 18px;">❌</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--red);margin-bottom:8px;">Verification Failed</div>
+      <div style="font-size:13.5px;color:var(--muted-light);margin-bottom:6px;">You got <strong style="color:#fff;">${quizCorrect} of ${QUIZ_QUESTIONS.length}</strong> correct. Need at least 3.</div>
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:28px;">Review the community guidelines and try again.</div>
+      <button class="btn-a" onclick="quizIdx=0;quizCorrect=0;quizAnswers=[];document.getElementById('quiz-result').style.display='none';document.getElementById('quiz-question-area').style.display='';renderQuizQuestion();" style="padding:13px 32px;font-size:15px;">Try Again</button>`;
   }
 }
 
@@ -3585,6 +3609,7 @@ async function completeVerification() {
   await saveUser();
   document.getElementById('verify-overlay')?.remove();
   toast('🎉 Welcome to Fortized!', 'success');
+  if (!CU.dateOfBirth) setTimeout(showDOBSetup, 400);
 }
 
 
